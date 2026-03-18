@@ -23,8 +23,12 @@ uv pip install --system -e .
 git config user.name "kagent-$KAGGLER_NAME"
 git config user.email "kagent-$KAGGLER_NAME@kagent"
 
-# --- Claude Code ---
-curl -fsSL https://claude.ai/install.sh | bash
+# --- Claude Code (retry on 429 rate limit) ---
+for attempt in 1 2 3 4 5; do
+    curl -fsSL https://claude.ai/install.sh | bash && break
+    echo "Claude install attempt $attempt failed, retrying in 30s..."
+    sleep 30
+done
 export PATH="$HOME/.claude/bin:$PATH"
 
 # --- gh CLI ---
