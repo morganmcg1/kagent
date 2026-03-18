@@ -203,7 +203,6 @@ class Transolver(nn.Module):
 # ---------------------------------------------------------------------------
 
 MAX_TIMEOUT = 30.0  # minutes
-MAX_EPOCHS = 50
 
 
 @dataclass
@@ -212,6 +211,7 @@ class Config:
     weight_decay: float = 1e-4
     batch_size: int = 4
     surf_weight: float = 10.0
+    epochs: int = 50
     splits_dir: str = "/mnt/new-pvc/datasets/tandemfoil/splits"
     wandb_group: str | None = None
     wandb_name: str | None = None
@@ -220,8 +220,7 @@ class Config:
 
 
 cfg = sp.parse(Config)
-if cfg.debug:
-    MAX_EPOCHS = 3
+MAX_EPOCHS = 3 if cfg.debug else cfg.epochs
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device: {device}" + (" [DEBUG]" if cfg.debug else ""))
