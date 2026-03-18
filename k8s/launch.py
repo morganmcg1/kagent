@@ -11,6 +11,7 @@ TEMPLATES_DIR = Path(__file__).parent
 KAGGLER_TEMPLATE = TEMPLATES_DIR / "kaggler-deployment.yaml"
 ORGANIZER_TEMPLATE = TEMPLATES_DIR / "organizer-deployment.yaml"
 PREPARE_TEMPLATE = TEMPLATES_DIR / "prepare-splits-job.yaml"
+TRAIN_TEMPLATE = TEMPLATES_DIR / "train-job.yaml"
 
 KAGGLER_NAMES = [
     "frieren", "fern", "tanjiro", "nezuko", "alphonse", "edward",
@@ -34,6 +35,8 @@ class Args:
     organizer_branch: str = "jurgen"  # branch the organizer works on
     organizer: bool = False  # also deploy the organizer pod
     prepare: bool = False  # run prepare_splits.py as a one-shot Job
+    train: str = ""  # run a training job with this name (e.g. "debug" or "baseline")
+    train_args: str = ""  # extra args for train.py (e.g. "--debug")
     dry_run: bool = False  # print manifests without applying
 
 
@@ -126,6 +129,37 @@ def kubectl_apply(manifest: str, name: str):
 
 def main():
     args = sp.parse(Args)
+
+    # --- Train job ---
+    if args.train:
+        train_cmd = f"uv run train.py --wandb_name baseline/{args.train} --agent baseline {args.train_args}"
+        configmap = render_configmap(
+            name=f"kagent-config-train-{args.train}",
+            labels={"app": "kagent", "role": "train", "research-tag": args.tag},
+            data={
+                "REPO_URL": args.repo_url,
+                "REPO_BRANCH": args.repo_branch,
+                "WANDB_ENTITY": args.wandb_entity,
+                "WANDB_PROJECT": args.wandb_project,
+                "WANDB_MODE": "online",
+            },
+        )
+        job = render_template(TRAIN_TEMPLATE.read_text(), {
+            "RUN_NAME": args.train,
+            "RESEARCH_TAG": args.tag,
+            "IMAGE": args.image,
+            "TRAIN_CMD": train_cmd,
+        })
+        manifest = configmap + "\n---\n" + job
+        if args.dry_run:
+            print("--- Train Job ---")
+            print(manifest)
+        else:
+            kubectl_apply(manifest, f"train-{args.train}")
+            print(f"\nMonitor:")
+            print(f"  kubectl logs -f job/kagent-train-{args.train}")
+            print(f"  kubectl get job kagent-train-{args.train}")
+        return
 
     # --- Prepare splits job ---
     if args.prepare:
