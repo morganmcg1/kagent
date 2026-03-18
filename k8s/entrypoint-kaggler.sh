@@ -38,17 +38,22 @@ cd /workspace/kagent/cfd-competition/kaggler
 export IS_SANDBOX=1
 
 PROMPT="You are $KAGGLER_NAME. Your branch is $BRANCH. Follow the instructions in @CLAUDE-KAGGLER.md. Go."
+LOGDIR="/workspace/kagent/logs"
+mkdir -p "$LOGDIR"
+
+CLAUDE_ARGS="--model claude-opus-4-6[1m] --output-format stream-json --verbose --dangerously-skip-permissions"
 
 ITERATION=0
 while true; do
     ITERATION=$((ITERATION + 1))
-    echo "=== Iteration $ITERATION ($(date)) ==="
+    LOGFILE="$LOGDIR/iter_${ITERATION}_$(date +%Y%m%d_%H%M%S).jsonl"
+    echo "=== Iteration $ITERATION ($(date)) → $LOGFILE ==="
 
     if [ "$ITERATION" -eq 1 ]; then
-        claude -p "$PROMPT" --dangerously-skip-permissions || true
+        claude -p "$PROMPT" $CLAUDE_ARGS > "$LOGFILE" 2>&1 || true
     else
-        claude -c -p "$PROMPT" --dangerously-skip-permissions || \
-        claude -p "$PROMPT" --dangerously-skip-permissions || true
+        claude -c -p "$PROMPT" $CLAUDE_ARGS > "$LOGFILE" 2>&1 || \
+        claude -p "$PROMPT" $CLAUDE_ARGS > "$LOGFILE" 2>&1 || true
     fi
 
     echo "=== Restarting in 10s ==="
