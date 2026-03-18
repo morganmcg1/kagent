@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kagent-prepare-splits
+  labels:
+    app: kagent
+    role: prepare
+    research-tag: {{RESEARCH_TAG}}
+spec:
+  ttlSecondsAfterFinished: 3600
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: kagent
+        role: prepare
+        research-tag: {{RESEARCH_TAG}}
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: prepare
+        image: {{IMAGE}}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git clone --branch "$REPO_BRANCH" "$REPO_URL" /workspace/kagent
+          cd /workspace/kagent
+          uv pip install --system -e .
+          uv run prepare_splits.py
+        envFrom:
+        - configMapRef:
+            name: kagent-config-prepare
+        env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: github-token
+        resources:
+          requests:
+            cpu: "8"
+            memory: "64Gi"
+          limits:
+            cpu: "16"
+            memory: "128Gi"
+        volumeMounts:
+        - name: dataset
+          mountPath: /mnt/new-pvc
+      volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: new-pvc

@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kagent-{{KAGGLER_NAME}}
+  labels:
+    app: kagent
+    role: kaggler
+    research-tag: {{RESEARCH_TAG}}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: kagent
+      kaggler: {{KAGGLER_NAME}}
+  template:
+    metadata:
+      labels:
+        app: kagent
+        role: kaggler
+        kaggler: {{KAGGLER_NAME}}
+        research-tag: {{RESEARCH_TAG}}
+    spec:
+      containers:
+      - name: kaggler
+        image: {{IMAGE}}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git clone --branch "$REPO_BRANCH" "$REPO_URL" /workspace/kagent
+          cd /workspace/kagent
+          bash k8s/entrypoint-kaggler.sh
+        envFrom:
+        - configMapRef:
+            name: kagent-config-kaggler-{{KAGGLER_NAME}}
+        env:
+        - name: WANDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: wandb-api-key
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: anthropic-api-key
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: github-token
+        resources:
+          requests:
+            cpu: "120"
+            memory: "960Gi"
+            nvidia.com/gpu: "8"
+          limits:
+            cpu: "120"
+            memory: "960Gi"
+            nvidia.com/gpu: "8"
+        volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
+        - name: dataset
+          mountPath: /mnt/new-pvc
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 32Gi
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: new-pvc
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"

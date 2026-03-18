@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kagent-organizer
+  labels:
+    app: kagent
+    role: organizer
+    research-tag: {{RESEARCH_TAG}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kagent
+      role: organizer
+  template:
+    metadata:
+      labels:
+        app: kagent
+        role: organizer
+        research-tag: {{RESEARCH_TAG}}
+    spec:
+      serviceAccountName: kagent-orchestrator
+      containers:
+      - name: organizer
+        image: ghcr.io/tcapelle/dev_box:latest
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -e
+          git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+          git clone --branch "$REPO_BRANCH" "$REPO_URL" /workspace/kagent
+          cd /workspace/kagent
+          bash k8s/entrypoint-organizer.sh
+        envFrom:
+        - configMapRef:
+            name: kagent-config-organizer
+        env:
+        - name: WANDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: wandb-api-key
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: anthropic-api-key
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: kagent-secrets
+              key: github-token
+        resources:
+          requests:
+            cpu: "4"
+            memory: "8Gi"
+          limits:
+            cpu: "8"
+            memory: "16Gi"
+        volumeMounts:
+        - name: dataset
+          mountPath: /mnt/new-pvc
+      volumes:
+      - name: dataset
+        persistentVolumeClaim:
+          claimName: new-pvc
