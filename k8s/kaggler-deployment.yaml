@@ -54,13 +54,13 @@ spec:
               key: github-token
         resources:
           requests:
-            cpu: "120"
-            memory: "960Gi"
-            nvidia.com/gpu: "8"
+            cpu: "16"
+            memory: "128Gi"
+            nvidia.com/gpu: "1"
           limits:
-            cpu: "120"
-            memory: "960Gi"
-            nvidia.com/gpu: "8"
+            cpu: "16"
+            memory: "128Gi"
+            nvidia.com/gpu: "1"
         volumeMounts:
         - name: dshm
           mountPath: /dev/shm
@@ -70,7 +70,7 @@ spec:
       - name: dshm
         emptyDir:
           medium: Memory
-          sizeLimit: 32Gi
+          sizeLimit: 16Gi
       - name: dataset
         persistentVolumeClaim:
           claimName: new-pvc

@@ -1,16 +1,21 @@
 """Generate predictions on the hidden test set.
 
+Adapt this to your model. The key contract:
+  - Load your model from a checkpoint
+  - Run inference on test/*.pt files
+  - Save predictions to PVC at /mnt/new-pvc/predictions/<agent>/<commit>/predictions.pt
+
 Run:
-  uv run predict.py --checkpoint models/model-<id>/checkpoint.pt
+  uv run predict.py --checkpoint models/model-<id>/checkpoint.pt --agent <your-name>
 """
 
 import json
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
 import simple_parsing as sp
 import torch
-import yaml
 from tqdm import tqdm
 
 from data import X_DIM
@@ -32,14 +37,19 @@ cfg = sp.parse(Config)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 splits_dir = Path(cfg.splits_dir)
 
-# Load model
-checkpoint_dir = Path(cfg.checkpoint).parent
-with open(checkpoint_dir / "config.yaml") as f:
-    model_config = yaml.safe_load(f)
+# ---------------------------------------------------------------------------
+# Load your model here. Example:
+#
+#   from train import MyModel
+#   model = MyModel(...).to(device)
+#   model.load_state_dict(torch.load(cfg.checkpoint, map_location=device, weights_only=True))
+#
+# Or if you saved the full model:
+#
+#   model = torch.load(cfg.checkpoint, map_location=device)
+# ---------------------------------------------------------------------------
+raise NotImplementedError("Load your model above and remove this line")
 
-from train import Transolver
-model = Transolver(**model_config).to(device)
-model.load_state_dict(torch.load(cfg.checkpoint, map_location=device, weights_only=True))
 model.eval()
 print(f"Loaded model from {cfg.checkpoint}")
 
@@ -75,10 +85,14 @@ with torch.no_grad():
         for j, x in enumerate(xs):
             predictions.append(pred[j, :x.shape[0]].cpu())
 
-# Save
+# Save predictions keyed by agent + commit hash
 agent_name = cfg.agent or "unknown"
-run_id = checkpoint_dir.name
-output_dir = PREDICTIONS_DIR / agent_name / run_id
+commit = subprocess.run(
+    ["git", "rev-parse", "--short", "HEAD"],
+    capture_output=True, text=True,
+).stdout.strip() or "unknown"
+
+output_dir = PREDICTIONS_DIR / agent_name / commit
 output_dir.mkdir(parents=True, exist_ok=True)
 output_path = output_dir / "predictions.pt"
 torch.save(predictions, output_path)

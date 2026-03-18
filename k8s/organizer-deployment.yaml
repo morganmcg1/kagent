@@ -19,10 +19,9 @@ spec:
         role: organizer
         research-tag: {{RESEARCH_TAG}}
     spec:
-      serviceAccountName: kagent-orchestrator
       containers:
       - name: organizer
-        image: ghcr.io/tcapelle/dev_box:latest
+        image: {{IMAGE}}
         command: ["/bin/bash", "-c"]
         args:
         - |
@@ -40,11 +39,6 @@ spec:
             secretKeyRef:
               name: kagent-secrets
               key: wandb-api-key
-        - name: ANTHROPIC_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: kagent-secrets
-              key: anthropic-api-key
         - name: GITHUB_TOKEN
           valueFrom:
             secretKeyRef:
@@ -52,15 +46,21 @@ spec:
               key: github-token
         resources:
           requests:
-            cpu: "4"
-            memory: "8Gi"
+            cpu: "16"
+            memory: "128Gi"
           limits:
-            cpu: "8"
-            memory: "16Gi"
+            cpu: "16"
+            memory: "128Gi"
         volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
         - name: dataset
           mountPath: /mnt/new-pvc
       volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 16Gi
       - name: dataset
         persistentVolumeClaim:
           claimName: new-pvc

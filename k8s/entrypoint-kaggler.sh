@@ -1,56 +1,48 @@
 set -e
 set -o pipefail
 
-WORKDIR="/workspace/kagent"
+BRANCH="kaggler/$KAGGLER_NAME"
 
 echo "=== kagent Kaggler: $KAGGLER_NAME ==="
-echo "Repo:   $REPO_URL (branch: $REPO_BRANCH)"
-echo "GPUs:   $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | wc -l) x $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1)"
+echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'none')"
 
-# Repo already cloned by the deployment args block
-cd "$WORKDIR"
+cd /workspace/kagent
+
+# --- Branch setup ---
+git fetch origin
+if git rev-parse --verify "origin/$BRANCH" >/dev/null 2>&1; then
+    git checkout "$BRANCH"
+    git pull origin "$BRANCH"
+else
+    git checkout -b "$BRANCH"
+    git push -u origin "$BRANCH"
+fi
+
+# --- Install ---
 uv pip install --system -e .
-
-# --- Git identity for commits ---
 git config user.name "kagent-$KAGGLER_NAME"
 git config user.email "kagent-$KAGGLER_NAME@kagent"
 
-# --- Install Claude Code ---
+# --- Claude Code ---
 curl -fsSL https://claude.ai/install.sh | bash
 export PATH="$HOME/.claude/bin:$PATH"
 
-# --- Install gh CLI ---
-curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+# --- gh CLI ---
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
 chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli-stable.list > /dev/null
-apt-get update && apt-get install -y gh
-# gh uses GITHUB_TOKEN env var automatically, no explicit login needed
-echo "=== gh auth ready (using GITHUB_TOKEN env var) ==="
+apt-get update -qq && apt-get install -y -qq gh
 
-# --- Install role instructions ---
-cp instructions/CLAUDE-KAGGLER.md "$WORKDIR/CLAUDE.md"
-
-# --- Launch Claude Code in Ralph Loop ---
+# --- Launch ---
+cd /workspace/kagent/cfd-competition/kaggler
 export IS_SANDBOX=1
 
-PROMPT="$(eval "cat <<_PROMPT_EOF_
-$(cat "$WORKDIR/instructions/prompt-kaggler.md")
-_PROMPT_EOF_")"
-
-# --- Start Weave thread logger in background ---
-python3 "$WORKDIR/tools/weave_logger.py" --role kaggler --agent-name "$KAGGLER_NAME" --workdir "$WORKDIR" &
+PROMPT="You are $KAGGLER_NAME. Your branch is $BRANCH. Follow the instructions in @CLAUDE-KAGGLER.md. Go."
 
 ITERATION=0
 while true; do
     ITERATION=$((ITERATION + 1))
-    echo "=== Ralph Loop iteration $ITERATION ($(date)) ==="
-
-    # Return to latest organizer branch so kaggler starts from the current baseline
-    git checkout "$ORGANIZER_BRANCH" 2>/dev/null || true
-    git pull origin "$ORGANIZER_BRANCH" 2>/dev/null || true
-
-    # Restore CLAUDE.md — branch checkouts clobber it
-    cp "$WORKDIR/instructions/CLAUDE-KAGGLER.md" "$WORKDIR/CLAUDE.md"
+    echo "=== Iteration $ITERATION ($(date)) ==="
 
     if [ "$ITERATION" -eq 1 ]; then
         claude -p "$PROMPT" --dangerously-skip-permissions || true
@@ -59,6 +51,6 @@ while true; do
         claude -p "$PROMPT" --dangerously-skip-permissions || true
     fi
 
-    echo "=== Claude exited at $(date), restarting in 5s ==="
-    sleep 5
+    echo "=== Restarting in 10s ==="
+    sleep 10
 done
