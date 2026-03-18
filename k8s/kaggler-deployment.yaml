@@ -55,11 +55,11 @@ spec:
         resources:
           requests:
             cpu: "16"
-            memory: "128Gi"
+            memory: "96Gi"
             nvidia.com/gpu: "1"
           limits:
             cpu: "16"
-            memory: "128Gi"
+            memory: "96Gi"
             nvidia.com/gpu: "1"
         volumeMounts:
         - name: dshm
