@@ -30,8 +30,8 @@ spec:
         - |
           set -e
           git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-          git clone --branch "$REPO_BRANCH" "$REPO_URL" /workspace/kagent
-          cd /workspace/kagent
+          git clone --branch "$REPO_BRANCH" "$REPO_URL" /workspace/repo
+          cd /workspace/repo/kagent
           bash k8s/entrypoint-kaggler.sh
         envFrom:
         - configMapRef:

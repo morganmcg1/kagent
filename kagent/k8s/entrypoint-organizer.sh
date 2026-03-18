@@ -1,6 +1,6 @@
 set -o pipefail
 
-WORKDIR="/workspace/kagent"
+WORKDIR="/workspace/repo/kagent"
 
 echo "=== kagent Organizer ==="
 echo "Repo:     $REPO_URL (branch: $REPO_BRANCH)"

@@ -1,7 +1,7 @@
 set -e
 set -o pipefail
 
-WORKDIR="/workspace/kagent"
+WORKDIR="/workspace/repo/kagent"
 
 echo "=== kagent Kaggler: $KAGGLER_NAME ==="
 echo "Repo:   $REPO_URL (branch: $REPO_BRANCH)"
