@@ -1,7 +1,7 @@
 """Train a CFD surrogate model.
 
-Template — fill in your model, loss, optimizer, and training loop.
-The data loading, W&B setup, and validation metric logging are provided.
+Template — fill in your model architecture.
+The training loop, loss, validation, and W&B logging are provided.
 
 Run:
   python train.py --agent <your-name> --wandb_name "<your-name>/<description>"
@@ -25,112 +25,32 @@ from viz import visualize
 
 
 # ---------------------------------------------------------------------------
-# YOUR MODEL, LOSS, OPTIMIZER — everything is up to you.
+# YOUR MODEL HERE
 #
 # Model contract:
 #   Input:  {"x": tensor [B, N, 24]}  (normalized features)
 #   Output: {"preds": tensor [B, N, 3]}  (predicted Ux, Uy, p in normalized space)
-# ---------------------------------------------------------------------------
-
-raise NotImplementedError("Write your model, loss, and training loop. Remove this line.")
-
-
-# ---------------------------------------------------------------------------
-# Config + data loading (you can modify the config)
-# ---------------------------------------------------------------------------
-
-MAX_TIMEOUT = 30.0  # minutes — do not increase
-
-
-@dataclass
-class Config:
-    batch_size: int = 4
-    epochs: int = 50
-    splits_dir: str = "/mnt/new-pvc/datasets/tandemfoil/splits"
-    wandb_group: str | None = None
-    wandb_name: str | None = None
-    agent: str | None = None
-    debug: bool = False
-
-
-cfg = sp.parse(Config)
-MAX_EPOCHS = 3 if cfg.debug else cfg.epochs
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device: {device}" + (" [DEBUG]" if cfg.debug else ""))
-
-train_ds, val_splits, stats, sample_weights = load_data(cfg.splits_dir, debug=cfg.debug)
-stats = {k: v.to(device) for k, v in stats.items()}
-
-loader_kwargs = dict(collate_fn=pad_collate, num_workers=4, pin_memory=True,
-                     persistent_workers=True, prefetch_factor=2)
-
-if cfg.debug:
-    train_loader = DataLoader(train_ds, batch_size=cfg.batch_size,
-                              shuffle=True, **loader_kwargs)
-else:
-    sampler = WeightedRandomSampler(sample_weights, num_samples=len(train_ds), replacement=True)
-    train_loader = DataLoader(train_ds, batch_size=cfg.batch_size,
-                              sampler=sampler, **loader_kwargs)
-
-val_loaders = {
-    name: DataLoader(ds, batch_size=cfg.batch_size, shuffle=False, **loader_kwargs)
-    for name, ds in val_splits.items()
-}
-
-
-# ---------------------------------------------------------------------------
-# W&B setup (do not remove — required for consistent metric tracking)
-# ---------------------------------------------------------------------------
-
-# model = ...  # your model here
-n_params = sum(p.numel() for p in model.parameters())
-
-run = wandb.init(
-    entity=os.environ.get("WANDB_ENTITY", "wandb-applied-ai-team"),
-    project=os.environ.get("WANDB_PROJECT", "kagent-v1"),
-    group=cfg.wandb_group,
-    name=cfg.wandb_name,
-    tags=[cfg.agent] if cfg.agent else [],
-    config={**asdict(cfg), "n_params": n_params,
-            "train_samples": len(train_ds),
-            "val_samples": {k: len(v) for k, v in val_splits.items()}},
-    mode=os.environ.get("WANDB_MODE", "online"),
-)
-
-wandb.define_metric("global_step")
-wandb.define_metric("train/*", step_metric="global_step")
-wandb.define_metric("val/*", step_metric="global_step")
-for _name in VAL_SPLIT_NAMES:
-    wandb.define_metric(f"{_name}/*", step_metric="global_step")
-
-model_dir = Path(f"models/model-{run.id}")
-model_dir.mkdir(parents=True)
-model_path = model_dir / "checkpoint.pt"
-
-
-# ---------------------------------------------------------------------------
-# YOUR TRAINING LOOP HERE
 #
-# You get: train_loader, val_loaders, stats, model, device
-# You must: log the required W&B metrics (see README.md)
+# Example:
 #
-# Data from loader: (x, y, is_surface, mask)  — all [B, N, ...]
-#   x:          [B, N, 24] float32 — raw features (normalize with stats)
-#   y:          [B, N, 3]  float32 — targets in physical units
-#   is_surface: [B, N]     bool    — surface node mask
-#   mask:       [B, N]     bool    — valid node mask (padding is False)
+#   class MyModel(nn.Module):
+#       def __init__(self, in_dim=24, hidden=256, out_dim=3):
+#           super().__init__()
+#           self.net = nn.Sequential(
+#               nn.Linear(in_dim, hidden), nn.GELU(),
+#               nn.Linear(hidden, hidden), nn.GELU(),
+#               nn.Linear(hidden, out_dim),
+#           )
+#       def forward(self, data, **kwargs):
+#           return {"preds": self.net(data["x"])}
 #
-# Normalization:
-#   x_norm = (x - stats["x_mean"]) / stats["x_std"]
-#   y_norm = (y - stats["y_mean"]) / stats["y_std"]
-#   pred_phys = pred_norm * stats["y_std"] + stats["y_mean"]
 # ---------------------------------------------------------------------------
+
+raise NotImplementedError("Define your model above and remove this line.")
 
 
 # ---------------------------------------------------------------------------
 # Validation (do not modify — ensures consistent metrics across all kagglers)
-# Call this after each epoch (or however often you validate).
 # ---------------------------------------------------------------------------
 
 def validate(model, val_loaders, stats, device, global_step, surf_weight=10.0):
@@ -199,5 +119,183 @@ def validate(model, val_loaders, stats, device, global_step, surf_weight=10.0):
     return mean_val_loss, split_metrics
 
 
-# --- Final cleanup (call at the end of your training) ---
-# wandb.finish()
+# ---------------------------------------------------------------------------
+# Config + data loading
+# ---------------------------------------------------------------------------
+
+MAX_TIMEOUT = 30.0  # minutes — do not increase
+
+
+@dataclass
+class Config:
+    lr: float = 5e-4
+    weight_decay: float = 1e-4
+    batch_size: int = 4
+    surf_weight: float = 10.0
+    epochs: int = 50
+    splits_dir: str = "/mnt/new-pvc/datasets/tandemfoil/splits"
+    wandb_group: str | None = None
+    wandb_name: str | None = None
+    agent: str | None = None
+    debug: bool = False
+
+
+cfg = sp.parse(Config)
+MAX_EPOCHS = 3 if cfg.debug else cfg.epochs
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device: {device}" + (" [DEBUG]" if cfg.debug else ""))
+
+train_ds, val_splits, stats, sample_weights = load_data(cfg.splits_dir, debug=cfg.debug)
+stats = {k: v.to(device) for k, v in stats.items()}
+
+loader_kwargs = dict(collate_fn=pad_collate, num_workers=4, pin_memory=True,
+                     persistent_workers=True, prefetch_factor=2)
+
+if cfg.debug:
+    train_loader = DataLoader(train_ds, batch_size=cfg.batch_size,
+                              shuffle=True, **loader_kwargs)
+else:
+    sampler = WeightedRandomSampler(sample_weights, num_samples=len(train_ds), replacement=True)
+    train_loader = DataLoader(train_ds, batch_size=cfg.batch_size,
+                              sampler=sampler, **loader_kwargs)
+
+val_loaders = {
+    name: DataLoader(ds, batch_size=cfg.batch_size, shuffle=False, **loader_kwargs)
+    for name, ds in val_splits.items()
+}
+
+# --- Build your model here ---
+# model = MyModel(...).to(device)
+raise NotImplementedError("Build your model above and remove this line.")
+
+n_params = sum(p.numel() for p in model.parameters())
+optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=MAX_EPOCHS)
+
+
+# ---------------------------------------------------------------------------
+# W&B setup (do not remove)
+# ---------------------------------------------------------------------------
+
+run = wandb.init(
+    entity=os.environ.get("WANDB_ENTITY", "wandb-applied-ai-team"),
+    project=os.environ.get("WANDB_PROJECT", "kagent-v1"),
+    group=cfg.wandb_group,
+    name=cfg.wandb_name,
+    tags=[cfg.agent] if cfg.agent else [],
+    config={**asdict(cfg), "n_params": n_params,
+            "train_samples": len(train_ds),
+            "val_samples": {k: len(v) for k, v in val_splits.items()}},
+    mode=os.environ.get("WANDB_MODE", "online"),
+)
+
+wandb.define_metric("global_step")
+wandb.define_metric("train/*", step_metric="global_step")
+wandb.define_metric("val/*", step_metric="global_step")
+for _name in VAL_SPLIT_NAMES:
+    wandb.define_metric(f"{_name}/*", step_metric="global_step")
+wandb.define_metric("lr", step_metric="global_step")
+
+model_dir = Path(f"models/model-{run.id}")
+model_dir.mkdir(parents=True)
+model_path = model_dir / "checkpoint.pt"
+
+
+# ---------------------------------------------------------------------------
+# Training loop
+# ---------------------------------------------------------------------------
+
+best_val = float("inf")
+best_metrics: dict = {}
+global_step = 0
+train_start = time.time()
+
+for epoch in range(MAX_EPOCHS):
+    if (time.time() - train_start) / 60.0 >= MAX_TIMEOUT:
+        print(f"Timeout ({MAX_TIMEOUT} min). Stopping.")
+        break
+
+    t0 = time.time()
+    model.train()
+    epoch_vol = epoch_surf = 0.0
+    n_batches = 0
+
+    for x, y, is_surface, mask in tqdm(train_loader, desc=f"Epoch {epoch+1}/{MAX_EPOCHS}", leave=False):
+        x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
+        is_surface = is_surface.to(device, non_blocking=True)
+        mask = mask.to(device, non_blocking=True)
+
+        x = (x - stats["x_mean"]) / stats["x_std"]
+        y_norm = (y - stats["y_mean"]) / stats["y_std"]
+
+        pred = model({"x": x})["preds"]
+        sq_err = (pred - y_norm) ** 2
+
+        vol_mask = mask & ~is_surface
+        surf_mask = mask & is_surface
+        vol_loss = (sq_err * vol_mask.unsqueeze(-1)).sum() / vol_mask.sum().clamp(min=1)
+        surf_loss = (sq_err * surf_mask.unsqueeze(-1)).sum() / surf_mask.sum().clamp(min=1)
+        loss = vol_loss + cfg.surf_weight * surf_loss
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        global_step += 1
+        wandb.log({"train/loss": loss.item(), "global_step": global_step})
+
+        epoch_vol += vol_loss.item()
+        epoch_surf += surf_loss.item()
+        n_batches += 1
+
+    scheduler.step()
+    epoch_vol /= n_batches
+    epoch_surf /= n_batches
+
+    # --- Validate ---
+    mean_val_loss, split_metrics = validate(model, val_loaders, stats, device, global_step, cfg.surf_weight)
+    dt = time.time() - t0
+
+    wandb.log({"train/vol_loss": epoch_vol, "train/surf_loss": epoch_surf,
+               "lr": scheduler.get_last_lr()[0], "epoch_time_s": dt, "global_step": global_step})
+
+    tag = ""
+    if mean_val_loss < best_val:
+        best_val = mean_val_loss
+        best_metrics = {"epoch": epoch + 1, "val_loss": mean_val_loss}
+        for sm in split_metrics.values():
+            best_metrics.update({f"best_{k}": v for k, v in sm.items()})
+        torch.save(model.state_dict(), model_path)
+        tag = " *"
+
+    peak_gb = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0
+    split_summary = "  ".join(
+        f"{name}={split_metrics[name][f'{name}/loss']:.4f}" for name in VAL_SPLIT_NAMES
+    )
+    print(
+        f"Epoch {epoch+1:3d} ({dt:.0f}s) [{peak_gb:.1f}GB]  "
+        f"train[vol={epoch_vol:.4f} surf={epoch_surf:.4f}]  "
+        f"val[{split_summary}]{tag}"
+    )
+
+# --- Final ---
+total_time = (time.time() - train_start) / 60.0
+print(f"\nDone ({total_time:.1f} min)")
+
+if best_metrics:
+    print(f"Best: epoch {best_metrics['epoch']}, val/loss={best_metrics['val_loss']:.4f}")
+    wandb.summary.update({"best_" + k: v for k, v in best_metrics.items()})
+
+    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+    plot_dir = Path("plots") / run.id
+    n = 1 if cfg.debug else 4
+    for split_name, split_ds in val_splits.items():
+        images = visualize(model, split_ds, stats, device, n_samples=n,
+                           out_dir=plot_dir / split_name)
+        if images:
+            wandb.log({
+                f"val_predictions/{split_name}": [wandb.Image(str(p)) for p in images],
+                "global_step": global_step,
+            })
+
+wandb.finish()
