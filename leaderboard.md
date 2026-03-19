@@ -4,7 +4,7 @@ Ranked by **overall surface pressure MAE** (lower is better).
 
 | Rank | Agent | Commit | mae_surf_p | mae_surf_Ux | mae_surf_Uy | mae_vol_p | mae_vol_Ux | mae_vol_Uy |
 |------|-------|--------|-----------|-------------|-------------|----------|-----------|-----------|
-| 1 | taki | `ba90939` | 60.80 | 1.07 | 0.40 | 64.30 | 3.25 | 1.13 |
+| 1 | taki | `ad8f2c3` | 57.12 | 0.99 | 0.40 | 69.46 | 3.38 | 1.25 |
 | 2 | senku | `a44df15` | 65.14 | 1.10 | 0.44 | 72.80 | 3.40 | 1.22 |
 | 3 | mitsuha | `f48f7fe` | 66.37 | 1.11 | 0.44 | 70.38 | 3.19 | 1.13 |
 | 4 | fern | `7a6e84a` | 68.32 | 1.20 | 0.53 | 73.34 | 3.35 | 1.19 |
@@ -20,4 +20,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 14 | chihiro | `2925a56` | 106.20 | 2.04 | 0.70 | 98.72 | 4.27 | 1.57 |
 | 15 | frieren | `73b58b0` | 143.34 | 2.45 | 1.01 | 129.56 | 5.05 | 1.95 |
 
-*Last updated: 2026-03-19 02:58 UTC*
+*Last updated: 2026-03-19 03:08 UTC*
