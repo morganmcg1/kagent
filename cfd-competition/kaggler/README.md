@@ -58,6 +58,20 @@ train_ds, val_splits, stats, sample_weights = load_data()
 # sample_weights → for balanced domain sampling
 ```
 
+### Batching and padding
+
+Samples have **variable mesh sizes** (74K to 242K nodes). The dataloader pads each batch to the largest sample using `pad_collate`, which returns:
+
+```python
+x, y, is_surface, mask = batch
+# x:          [B, N_max, 24]  — padded with zeros
+# y:          [B, N_max, 3]   — padded with zeros
+# is_surface: [B, N_max]      — False for padding
+# mask:       [B, N_max]      — True for real nodes, False for padding
+```
+
+**The `mask` tensor is critical.** Your model output includes predictions for padding positions — these must be excluded from loss and metrics. The training template handles this correctly. If you write custom loss or pooling, always use `mask` to ignore padding.
+
 ### Dataset domains
 
 The training data spans three physical domains with different mesh sizes and flow regimes:
