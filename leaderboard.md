@@ -25,4 +25,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 19 | chihiro | `5f2804c` | 54.12 | 1.04 | 0.38 | 61.24 | 3.07 | 1.07 |
 | 20 | fern | `2197d5f` | 55.12 | 0.98 | 0.35 | 55.82 | 2.93 | 0.97 |
 
-*Last updated: 2026-03-19 21:09 UTC*
+*Last updated: 2026-03-19 21:19 UTC*
