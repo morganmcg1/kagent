@@ -76,12 +76,9 @@ The train.py template logs all required W&B metrics automatically. See README.md
 
 ## Ideas to explore
 
-- Architecture: there are purpose-built architectures for this kind of task — do your research.
-- Loss: the template uses MSE with surface weighting. Try physics-aware losses, per-channel weighting, Huber loss.
-- Learning rate: cosine annealing, warmup, OneCycleLR, different base LRs.
-- Normalization: the template normalizes x and y globally. Try per-domain, per-channel, or physics-based normalization (Cp, velocity ratios).
-- The 4 val tracks test different failure modes — if you're weak on `val_ood_re`, think about what makes Re=4.445M hard.
-- Data: the balanced sampler weights domains equally. Try different weighting strategies.
+- There are purpose-built architectures for this kind of task — do your research.
+- The 4 val tracks test different failure modes — understand what makes each one hard.
+- Everything is fair game: architecture, loss, optimizer, normalization, data sampling.
 
 ## NEVER STOP
 

@@ -1,10 +1,10 @@
 """Train a CFD surrogate model.
 
-Template training script — fill in your model architecture.
-The data loading, loss computation, validation, and W&B logging are ready to use.
+Template — fill in your model, loss, optimizer, and training loop.
+The data loading, W&B setup, and validation metric logging are provided.
 
 Run:
-  uv run train.py --agent <your-name> --wandb_name "<your-name>/<description>"
+  python train.py --agent <your-name> --wandb_name "<your-name>/<description>"
 """
 
 import os
@@ -25,42 +25,26 @@ from viz import visualize
 
 
 # ---------------------------------------------------------------------------
-# YOUR MODEL HERE
+# YOUR MODEL, LOSS, OPTIMIZER — everything is up to you.
 #
-# Requirements:
-#   - Input:  dict with key "x" → tensor [B, N, 24]
-#   - Output: dict with key "preds" → tensor [B, N, 3]  (Ux, Uy, p)
-#
-# Example minimal model:
-#
-#   class MyModel(nn.Module):
-#       def __init__(self, in_dim=24, out_dim=3, hidden=256):
-#           super().__init__()
-#           self.net = nn.Sequential(
-#               nn.Linear(in_dim, hidden), nn.GELU(),
-#               nn.Linear(hidden, hidden), nn.GELU(),
-#               nn.Linear(hidden, out_dim),
-#           )
-#       def forward(self, data, **kwargs):
-#           return {"preds": self.net(data["x"])}
-#
+# Model contract:
+#   Input:  {"x": tensor [B, N, 24]}  (normalized features)
+#   Output: {"preds": tensor [B, N, 3]}  (predicted Ux, Uy, p in normalized space)
 # ---------------------------------------------------------------------------
+
+raise NotImplementedError("Write your model, loss, and training loop. Remove this line.")
 
 
 # ---------------------------------------------------------------------------
-# Training — you can modify config, optimizer, loss, etc.
-# The validation + logging loop below must stay to ensure consistent metrics.
+# Config + data loading (you can modify the config)
 # ---------------------------------------------------------------------------
 
-MAX_TIMEOUT = 30.0  # minutes
+MAX_TIMEOUT = 30.0  # minutes — do not increase
 
 
 @dataclass
 class Config:
-    lr: float = 5e-4
-    weight_decay: float = 1e-4
     batch_size: int = 4
-    surf_weight: float = 10.0  # surface loss multiplier
     epochs: int = 50
     splits_dir: str = "/mnt/new-pvc/datasets/tandemfoil/splits"
     wandb_group: str | None = None
@@ -94,15 +78,14 @@ val_loaders = {
     for name, ds in val_splits.items()
 }
 
-# --- Build your model here ---
-# model = MyModel(...).to(device)
-raise NotImplementedError("Define your model above and remove this line")
 
+# ---------------------------------------------------------------------------
+# W&B setup (do not remove — required for consistent metric tracking)
+# ---------------------------------------------------------------------------
+
+# model = ...  # your model here
 n_params = sum(p.numel() for p in model.parameters())
-optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=MAX_EPOCHS)
 
-# --- W&B ---
 run = wandb.init(
     entity=os.environ.get("WANDB_ENTITY", "wandb-applied-ai-team"),
     project=os.environ.get("WANDB_PROJECT", "kagent-v1"),
@@ -120,64 +103,38 @@ wandb.define_metric("train/*", step_metric="global_step")
 wandb.define_metric("val/*", step_metric="global_step")
 for _name in VAL_SPLIT_NAMES:
     wandb.define_metric(f"{_name}/*", step_metric="global_step")
-wandb.define_metric("lr", step_metric="global_step")
 
 model_dir = Path(f"models/model-{run.id}")
 model_dir.mkdir(parents=True)
 model_path = model_dir / "checkpoint.pt"
-with open(model_dir / "config.yaml", "w") as f:
-    yaml.dump({"n_params": n_params}, f)  # save your model config here
 
-best_val = float("inf")
-best_metrics: dict = {}
-global_step = 0
-train_start = time.time()
 
-for epoch in range(MAX_EPOCHS):
-    if (time.time() - train_start) / 60.0 >= MAX_TIMEOUT:
-        print(f"Timeout ({MAX_TIMEOUT} min). Stopping.")
-        break
+# ---------------------------------------------------------------------------
+# YOUR TRAINING LOOP HERE
+#
+# You get: train_loader, val_loaders, stats, model, device
+# You must: log the required W&B metrics (see README.md)
+#
+# Data from loader: (x, y, is_surface, mask)  — all [B, N, ...]
+#   x:          [B, N, 24] float32 — raw features (normalize with stats)
+#   y:          [B, N, 3]  float32 — targets in physical units
+#   is_surface: [B, N]     bool    — surface node mask
+#   mask:       [B, N]     bool    — valid node mask (padding is False)
+#
+# Normalization:
+#   x_norm = (x - stats["x_mean"]) / stats["x_std"]
+#   y_norm = (y - stats["y_mean"]) / stats["y_std"]
+#   pred_phys = pred_norm * stats["y_std"] + stats["y_mean"]
+# ---------------------------------------------------------------------------
 
-    t0 = time.time()
-    model.train()
-    epoch_vol = epoch_surf = 0.0
-    n_batches = 0
 
-    for x, y, is_surface, mask in tqdm(train_loader, desc=f"Epoch {epoch+1}/{MAX_EPOCHS}", leave=False):
-        x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
-        is_surface = is_surface.to(device, non_blocking=True)
-        mask = mask.to(device, non_blocking=True)
+# ---------------------------------------------------------------------------
+# Validation (do not modify — ensures consistent metrics across all kagglers)
+# Call this after each epoch (or however often you validate).
+# ---------------------------------------------------------------------------
 
-        # Normalize inputs and targets
-        x = (x - stats["x_mean"]) / stats["x_std"]
-        y_norm = (y - stats["y_mean"]) / stats["y_std"]
-
-        # Forward pass — your model takes {"x": normalized_x} and returns {"preds": [B, N, 3]}
-        pred = model({"x": x})["preds"]
-        sq_err = (pred - y_norm) ** 2
-
-        # Loss: separate volume and surface, weight surface higher
-        vol_mask = mask & ~is_surface
-        surf_mask = mask & is_surface
-        vol_loss = (sq_err * vol_mask.unsqueeze(-1)).sum() / vol_mask.sum().clamp(min=1)
-        surf_loss = (sq_err * surf_mask.unsqueeze(-1)).sum() / surf_mask.sum().clamp(min=1)
-        loss = vol_loss + cfg.surf_weight * surf_loss
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        global_step += 1
-        wandb.log({"train/loss": loss.item(), "global_step": global_step})
-
-        epoch_vol += vol_loss.item()
-        epoch_surf += surf_loss.item()
-        n_batches += 1
-
-    scheduler.step()
-    epoch_vol /= n_batches
-    epoch_surf /= n_batches
-
-    # --- Validate (do not modify — ensures consistent metrics) ---
+def validate(model, val_loaders, stats, device, global_step, surf_weight=10.0):
+    """Run validation across all splits, log to W&B. Returns mean val/loss."""
     model.eval()
     val_loss_sum = 0.0
     split_metrics: dict[str, dict] = {}
@@ -215,7 +172,7 @@ for epoch in range(MAX_EPOCHS):
 
         val_vol /= max(n_vb, 1)
         val_surf /= max(n_vb, 1)
-        split_loss = val_vol + cfg.surf_weight * val_surf
+        split_loss = val_vol + surf_weight * val_surf
         mae_surf /= max(n_surf, 1)
         mae_vol /= max(n_vol, 1)
 
@@ -233,57 +190,14 @@ for epoch in range(MAX_EPOCHS):
         val_loss_sum += split_loss
 
     mean_val_loss = val_loss_sum / len(val_loaders)
-    dt = time.time() - t0
 
-    metrics = {
-        "train/vol_loss": epoch_vol,
-        "train/surf_loss": epoch_surf,
-        "val/loss": mean_val_loss,
-        "lr": scheduler.get_last_lr()[0],
-        "epoch_time_s": dt,
-        "global_step": global_step,
-    }
+    metrics = {"val/loss": mean_val_loss, "global_step": global_step}
     for sm in split_metrics.values():
         metrics.update(sm)
     wandb.log(metrics)
 
-    tag = ""
-    if mean_val_loss < best_val:
-        best_val = mean_val_loss
-        best_metrics = {"epoch": epoch + 1, "val_loss": mean_val_loss}
-        for sm in split_metrics.values():
-            best_metrics.update({f"best_{k}": v for k, v in sm.items()})
-        torch.save(model.state_dict(), model_path)
-        tag = " *"
+    return mean_val_loss, split_metrics
 
-    peak_gb = torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else 0
-    split_summary = "  ".join(
-        f"{name}={split_metrics[name][f'{name}/loss']:.4f}" for name in VAL_SPLIT_NAMES
-    )
-    print(
-        f"Epoch {epoch+1:3d} ({dt:.0f}s) [{peak_gb:.1f}GB]  "
-        f"train[vol={epoch_vol:.4f} surf={epoch_surf:.4f}]  "
-        f"val[{split_summary}]{tag}"
-    )
 
-# --- Final ---
-total_time = (time.time() - train_start) / 60.0
-print(f"\nDone ({total_time:.1f} min)")
-
-if best_metrics:
-    print(f"Best: epoch {best_metrics['epoch']}, val/loss={best_metrics['val_loss']:.4f}")
-    wandb.summary.update({"best_" + k: v for k, v in best_metrics.items()})
-
-    model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
-    plot_dir = Path("plots") / run.id
-    n = 1 if cfg.debug else 4
-    for split_name, split_ds in val_splits.items():
-        images = visualize(model, split_ds, stats, device, n_samples=n,
-                           out_dir=plot_dir / split_name)
-        if images:
-            wandb.log({
-                f"val_predictions/{split_name}": [wandb.Image(str(p)) for p in images],
-                "global_step": global_step,
-            })
-
-wandb.finish()
+# --- Final cleanup (call at the end of your training) ---
+# wandb.finish()
