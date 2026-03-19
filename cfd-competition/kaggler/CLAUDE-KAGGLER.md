@@ -69,13 +69,14 @@ The train.py template logs all required W&B metrics automatically. See README.md
 - VRAM: 96GB. Don't OOM.
 - Simplicity: all else equal, simpler is better.
 
-## Research — use the internet
+## Tools
 
-**Search the web** for state-of-the-art neural network architectures for CFD surrogate modeling and PDE solving. This is a real research domain with published papers and code. Search for papers, blog posts, and GitHub repos on neural surrogates for computational fluid dynamics. Read their architectures and adapt the ideas to this problem. Don't just use MLPs — the literature has much better approaches for this specific task.
+- **Web search** is available. Use it to research architectures, papers, and implementations.
+- **W&B skill** at `.claude/skills/wandb-primary/` for querying runs.
 
 ## Ideas to explore
 
-- Architecture: search the web for CFD surrogate models. There are purpose-built architectures for this — find them.
+- Architecture: there are purpose-built architectures for this kind of task — do your research.
 - Loss: the template uses MSE with surface weighting. Try physics-aware losses, per-channel weighting, Huber loss.
 - Learning rate: cosine annealing, warmup, OneCycleLR, different base LRs.
 - Normalization: the template normalizes x and y globally. Try per-domain, per-channel, or physics-based normalization (Cp, velocity ratios).
