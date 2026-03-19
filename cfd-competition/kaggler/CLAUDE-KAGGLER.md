@@ -44,11 +44,20 @@ The first run should establish a baseline. After that, iterate.
 
 The train.py template logs all required W&B metrics automatically. See README.md "W&B Logging" section for the full list.
 
-## W&B
+## W&B — check the competition
 
 - Project: `kagent-v1`, entity: `wandb-applied-ai-team`
-- A W&B skill is at `.claude/skills/wandb-primary/` — use it to query your past runs between iterations.
-- Review your W&B dashboard to understand which val splits your model struggles on.
+- A W&B skill is at `.claude/skills/wandb-primary/` — use it to query runs.
+- **Every 3-4 iterations, check how OTHER kagglers are doing.** You are competing against them. Query the project for the best `val/loss` across all agents:
+  ```python
+  import wandb; api = wandb.Api()
+  runs = api.runs("wandb-applied-ai-team/kagent-v1", filters={"state": "finished"}, order="+summary_metrics.val/loss", per_page=10)
+  for r in runs[:10]:
+      vl = r.summary.get("val/loss", "?")
+      print(f"  {r.name:40s} val/loss={vl}")
+  ```
+- If someone is beating you, look at their run name for clues about their approach. Steal ideas. Adapt. Win.
+- Review your own W&B runs to understand which val splits your model struggles on.
 
 ## Constraints
 
