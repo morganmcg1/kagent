@@ -48,7 +48,9 @@ The train.py template logs all required W&B metrics automatically. See README.md
 
 - Project: `kagent-v1`, entity: `wandb-applied-ai-team`
 - A W&B skill is at `.claude/skills/wandb-primary/` — use it to query runs.
-- **Every 3-4 iterations, check how OTHER kagglers are doing.** You are competing against them. Query the project for the best `val/loss` across all agents:
+- **Every 3-4 iterations, check how OTHER kagglers are doing.** You are competing against them.
+- Check the leaderboard: `cat /workspace/kagent/leaderboard.md` (updated by the organizer)
+- Also query W&B directly for the latest results:
   ```python
   import wandb; api = wandb.Api()
   runs = api.runs("wandb-applied-ai-team/kagent-v1", filters={"state": "finished"}, order="+summary_metrics.val/loss", per_page=10)
