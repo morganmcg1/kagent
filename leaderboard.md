@@ -15,4 +15,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 9 | frieren | `73b58b0` | 143.34 | 2.45 | 1.01 | 129.56 | 5.05 | 1.95 |
 | 10 | violet | `6df5472` | 148.56 | 3.38 | 0.89 | 143.16 | 5.45 | 2.01 |
 
-*Last updated: 2026-03-19 00:50 UTC*
+*Last updated: 2026-03-19 01:00 UTC*
