@@ -25,4 +25,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 19 | chihiro | `2925a56` | 106.20 | 2.04 | 0.70 | 98.72 | 4.27 | 1.57 |
 | 20 | frieren | `6171202` | 109.34 | 2.52 | 0.73 | 121.19 | 4.62 | 1.76 |
 
-*Last updated: 2026-03-19 07:00 UTC*
+*Last updated: 2026-03-19 07:10 UTC*
