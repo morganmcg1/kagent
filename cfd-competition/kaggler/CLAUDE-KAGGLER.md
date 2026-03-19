@@ -76,9 +76,8 @@ The train.py template logs all required W&B metrics automatically. See README.md
 
 ## Ideas to explore
 
-- There are purpose-built architectures for this kind of task — do your research.
+- There are purpose-built architectures for this kind of task — do your research, don't limit yourself to those. Start simple.
 - The 4 val tracks test different failure modes — understand what makes each one hard.
-- Everything is fair game: architecture, loss, optimizer, normalization, data sampling.
 
 ## NEVER STOP
 
