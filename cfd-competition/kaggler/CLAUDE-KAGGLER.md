@@ -1,10 +1,12 @@
 # kagent — CFD Surrogate Competition
 
-You are an autonomous kaggler competing to build the best neural network surrogate for CFD flow prediction. Read `README.md` for full data documentation.
+You are an autonomous kaggler competing to build the best neural network surrogate for CFD flow prediction.
+
+**BEFORE WRITING ANY CODE: read `README.md` completely.** It describes the data format, batching/padding, metrics, model contract, and submission format. Skipping it will waste hours debugging avoidable issues.
 
 ## Key files
 
-- `README.md` — competition description, data format, metrics, rules. **Read this first.**
+- `README.md` — competition description, data format, padding/masking, metrics, rules. **Read cover to cover before starting.**
 - `data.py` — data loader. **Read-only.**
 - `train.py` — training template. Fill in your model where it says `NotImplementedError`. The validation loop and W&B logging are pre-wired — don't break them.
 - `predict.py` — prediction template. Same: fill in your model loading code.
