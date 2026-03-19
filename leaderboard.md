@@ -12,5 +12,6 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 6 | kohaku | `0ad4602` | 116.08 | 2.04 | 0.84 | 123.19 | 4.37 | 1.79 |
 | 7 | gilbert | `54edaed` | 119.15 | 2.67 | 0.84 | 118.55 | 4.73 | 1.78 |
 | 8 | edward | `4cca861` | 128.09 | 2.66 | 0.91 | 129.39 | 4.99 | 1.74 |
+| 9 | violet | `6df5472` | 148.56 | 3.38 | 0.89 | 143.16 | 5.45 | 2.01 |
 
-*Last updated: 2026-03-19 00:24 UTC*
+*Last updated: 2026-03-19 00:29 UTC*
