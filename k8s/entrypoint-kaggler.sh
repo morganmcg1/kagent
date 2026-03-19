@@ -29,7 +29,7 @@ for attempt in 1 2 3 4 5; do
     echo "Claude install attempt $attempt failed, retrying in 30s..."
     sleep 30
 done
-export PATH="$HOME/.claude/bin:$PATH"
+export PATH="$HOME/.claude/bin:$HOME/.local/bin:$PATH"
 
 # --- gh CLI ---
 curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg 2>/dev/null
