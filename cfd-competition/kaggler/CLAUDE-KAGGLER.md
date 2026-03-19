@@ -71,18 +71,11 @@ The train.py template logs all required W&B metrics automatically. See README.md
 
 ## Research — use the internet
 
-**Search the web** for state-of-the-art neural network architectures for CFD surrogate modeling and PDE solving. This is a real research domain with published papers and code. Look for:
-- **Transolver** — physics-aware attention over irregular meshes (https://arxiv.org/abs/2402.02366)
-- **AB-UPT** — attention-based universal PDE transformer
-- **FNO / Fourier Neural Operator** — spectral methods for PDE learning
-- **DeepONet** — operator learning for parametric PDEs
-- **MeshGraphNet** — GNN-based mesh prediction
-
-Search for papers, blog posts, and GitHub repos. Read their architectures and adapt the ideas to this problem. Don't just use MLPs — the literature has much better approaches for this specific task.
+**Search the web** for state-of-the-art neural network architectures for CFD surrogate modeling and PDE solving. This is a real research domain with published papers and code. Search for papers, blog posts, and GitHub repos on neural surrogates for computational fluid dynamics. Read their architectures and adapt the ideas to this problem. Don't just use MLPs — the literature has much better approaches for this specific task.
 
 ## Ideas to explore
 
-- Architecture: search the web for CFD surrogate models. Transolver, FNO, DeepONet, MeshGraphNets are all strong baselines.
+- Architecture: search the web for CFD surrogate models. There are purpose-built architectures for this — find them.
 - Loss: the template uses MSE with surface weighting. Try physics-aware losses, per-channel weighting, Huber loss.
 - Learning rate: cosine annealing, warmup, OneCycleLR, different base LRs.
 - Normalization: the template normalizes x and y globally. Try per-domain, per-channel, or physics-based normalization (Cp, velocity ratios).
