@@ -25,4 +25,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 19 | chihiro | `1d8498b` | 58.56 | 1.10 | 0.40 | 65.88 | 3.22 | 1.15 |
 | 20 | kohaku | `9cff407` | 72.61 | 1.11 | 0.52 | 84.21 | 3.85 | 1.56 |
 
-*Last updated: 2026-03-19 17:47 UTC*
+*Last updated: 2026-03-19 17:52 UTC*
