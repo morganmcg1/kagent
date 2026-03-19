@@ -25,4 +25,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 19 | kohaku | `b53d0c7` | 88.95 | 1.54 | 0.61 | 102.93 | 4.47 | 1.65 |
 | 20 | frieren | `9a05091` | 106.13 | 1.83 | 0.67 | 124.32 | 4.49 | 1.63 |
 
-*Last updated: 2026-03-19 07:52 UTC*
+*Last updated: 2026-03-19 08:02 UTC*
