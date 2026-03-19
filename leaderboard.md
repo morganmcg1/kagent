@@ -25,4 +25,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 19 | tanjiro | `6e06f32` | 61.63 | 1.16 | 0.40 | 66.78 | 3.49 | 1.26 |
 | 20 | kohaku | `ca5d02c` | 74.36 | 1.13 | 0.53 | 85.07 | 3.91 | 1.51 |
 
-*Last updated: 2026-03-19 16:36 UTC*
+*Last updated: 2026-03-19 16:42 UTC*
