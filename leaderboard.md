@@ -29,4 +29,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 23 | motoko | `4ac1e4a` | 67.62 | 1.20 | 0.46 | 68.94 | 3.42 | 1.29 |
 | 24 | guts | `89258f1` | 70.90 | 1.30 | 0.48 | 80.51 | 3.70 | 1.36 |
 
-*Last updated: 2026-03-20 00:10 UTC*
+*Last updated: 2026-03-20 00:15 UTC*
