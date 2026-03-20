@@ -30,4 +30,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 24 | fern | `d6c5810` | 52.85 | 0.90 | 0.34 | 55.10 | 2.92 | 0.96 |
 | 25 | zoro | `123372f` | 56.60 | 1.02 | 0.38 | 55.81 | 2.91 | 0.99 |
 
-*Last updated: 2026-03-20 14:48 UTC*
+*Last updated: 2026-03-20 14:53 UTC*
