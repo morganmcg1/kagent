@@ -75,6 +75,10 @@ require_runtime_auth() {
                 echo "Missing Codex authentication. Set OPENAI_API_KEY or provision ~/.codex/auth.json"
                 exit 1
             fi
+            # Login with API key for headless environments
+            if [ -n "${OPENAI_API_KEY:-}" ]; then
+                printenv OPENAI_API_KEY | codex login --with-api-key 2>/dev/null || true
+            fi
             ;;
         *)
             echo "Unsupported AGENT_RUNTIME: $AGENT_RUNTIME"
