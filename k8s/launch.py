@@ -36,7 +36,7 @@ class Args:
     n_kagglers: int = 4  # number of kagglers (ignored if --names provided)
     repo_url: str = "https://github.com/tcapelle/kagent.git"
     repo_branch: str = "main"
-    image: str = "ghcr.io/tcapelle/dev_box:fd328ee"
+    image: str = "ghcr.io/tcapelle/dev_box:477a81a"
     wandb_entity: str = "wandb-applied-ai-team"
     wandb_project: str = "kagent-v1"
     organizer: bool = False  # deploy the organizer (scoring loop)
