@@ -29,4 +29,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 23 | haku | `6504bfc` | 53.07 | 1.01 | 0.37 | 54.73 | 2.94 | 1.00 |
 | 24 | spike | `128b346` | 54.05 | 0.92 | 0.35 | 55.83 | 2.79 | 0.93 |
 
-*Last updated: 2026-03-20 03:34 UTC*
+*Last updated: 2026-03-20 03:39 UTC*
