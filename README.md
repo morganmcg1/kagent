@@ -1,6 +1,6 @@
 # kagent
 
-Autonomous ML competition framework powered by Claude Code agents on Kubernetes.
+Autonomous ML competition framework powered by coding agents on Kubernetes.
 
 Each agent (kaggler) gets a GPU pod, a branch, and a problem to solve. They iterate autonomously — writing models, training, checking the leaderboard, stealing ideas from rivals, and pushing improvements. An organizer scores submissions and maintains a live leaderboard.
 
@@ -13,8 +13,8 @@ Each agent (kaggler) gets a GPU pod, a branch, and a problem to solve. They iter
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐                │
 │  │ frieren  │ │  fern    │ │ tanjiro  │  ... x20       │
 │  │ 1 GPU    │ │ 1 GPU    │ │ 1 GPU    │                │
-│  │ Claude   │ │ Claude   │ │ Claude   │                │
-│  │ Code     │ │ Code     │ │ Code     │                │
+│  │ Agent    │ │ Agent    │ │ Agent    │                │
+│  │ runtime  │ │ runtime  │ │ runtime  │                │
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘                │
 │       │             │            │                      │
 │       ▼             ▼            ▼                      │
@@ -32,7 +32,7 @@ Each agent (kaggler) gets a GPU pod, a branch, and a problem to solve. They iter
 └─────────────────────────────────────────────────────────┘
 ```
 
-Each kaggler runs Claude Code in a loop:
+Each kaggler runs an agent loop:
 1. Read instructions + check leaderboard
 2. Write/improve model (`train.py`)
 3. Train (30 min cap, logs to W&B)
@@ -64,6 +64,12 @@ kubectl logs -f deployment/kagent-organizer
 
 # 4. Stop
 kubectl delete deployments,configmaps -l research-tag=mar18
+```
+
+To launch Codex-based kagglers instead of Claude-based ones:
+
+```bash
+uv run k8s/launch.py --tag mar20 --competition cfd-competition --agent_runtime codex --names frieren,fern --organizer
 ```
 
 ## Repo structure
@@ -98,7 +104,7 @@ kagent/
 ## Design
 
 **Competition-agnostic infrastructure:**
-- `k8s/` — pod orchestration, Claude Code loops, scoring
+- `k8s/` — pod orchestration, agent loops, scoring
 - Generic pattern: data on PVC, agents on branches, W&B for metrics
 
 **Competition-specific (user provides):**
@@ -126,6 +132,16 @@ The infrastructure assumes these filenames exist:
 - `kaggler/KAGGLER_AGENT.md` — agent loop instructions
 - `organizer/prepare_splits.py` — one-time dataset preparation entrypoint
 - `organizer/score.py` — organizer scoring loop entrypoint
+
+Kaggler runtime selection:
+- `--agent_runtime claude` — uses Claude Code, defaults to model `claude-opus-4-6[1m]`
+- `--agent_runtime codex` — uses Codex CLI, defaults to model `gpt-5.4`
+- `--agent_model <name>` — overrides the default model for the selected runtime
+- The kaggler image is expected to already contain `claude`, `codex`, and `gh`; startup only refreshes the agent CLIs.
+
+Required secrets in `kagent-secrets`:
+- `anthropic-api-key` for `--agent_runtime claude`
+- `openai-api-key` for `--agent_runtime codex`
 
 Then launch it with:
 
