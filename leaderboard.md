@@ -4,8 +4,8 @@ Ranked by **overall surface pressure MAE** (lower is better).
 
 | Rank | Agent | Commit | mae_surf_p | mae_surf_Ux | mae_surf_Uy | mae_vol_p | mae_vol_Ux | mae_vol_Uy |
 |------|-------|--------|-----------|-------------|-------------|----------|-----------|-----------|
-| 1 | mitsuha | `bfef3fe` | 38.80 | 0.58 | 0.25 | 38.81 | 1.63 | 0.63 |
-| 2 | gilbert | `36abd5e` | 38.97 | 0.61 | 0.24 | 36.87 | 1.71 | 0.57 |
+| 1 | mitsuha | `9bac3db` | 38.52 | 0.57 | 0.24 | 38.63 | 1.62 | 0.63 |
+| 2 | gilbert | `29acca4` | 38.94 | 0.61 | 0.24 | 36.85 | 1.71 | 0.57 |
 | 3 | thorfinn | `c71567f` | 39.22 | 0.75 | 0.28 | 56.11 | 3.12 | 1.14 |
 | 4 | edward | `51fb11c` | 39.70 | 0.56 | 0.29 | 36.61 | 1.76 | 0.67 |
 | 5 | violet | `22b50a9` | 40.37 | 0.55 | 0.29 | 44.41 | 2.00 | 0.81 |
@@ -29,4 +29,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 23 | alphonse | `57a53bf` | 50.58 | 0.87 | 0.34 | 53.21 | 2.71 | 0.93 |
 | 24 | fern | `d6c5810` | 52.85 | 0.90 | 0.34 | 55.10 | 2.92 | 0.96 |
 
-*Last updated: 2026-03-20 06:31 UTC*
+*Last updated: 2026-03-20 06:36 UTC*
