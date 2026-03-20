@@ -1,9 +1,14 @@
 set -e
 set -o pipefail
 
+: "${COMPETITION_DIR:?missing COMPETITION_DIR}"
+
 BRANCH="kaggler/$KAGGLER_NAME"
+KAGGLER_WORKDIR="${KAGGLER_WORKDIR:-/workspace/kagent/$COMPETITION_DIR/kaggler}"
+KAGGLER_PROMPT_FILE="${KAGGLER_PROMPT_FILE:-KAGGLER_AGENT.md}"
 
 echo "=== kagent Kaggler: $KAGGLER_NAME ==="
+echo "Competition: $COMPETITION_DIR"
 echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'none')"
 
 cd /workspace/kagent
@@ -38,10 +43,15 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githu
 apt-get update -qq && apt-get install -y -qq gh
 
 # --- Launch ---
-cd /workspace/kagent/cfd-competition/kaggler
+cd "$KAGGLER_WORKDIR"
 export IS_SANDBOX=1
 
-PROMPT="You are $KAGGLER_NAME. Your branch is $BRANCH. Follow the instructions in @CLAUDE-KAGGLER.md. Go."
+if [ ! -f "$KAGGLER_PROMPT_FILE" ]; then
+    echo "Missing prompt file: $KAGGLER_WORKDIR/$KAGGLER_PROMPT_FILE"
+    exit 1
+fi
+
+PROMPT="You are $KAGGLER_NAME. Your branch is $BRANCH. Follow the instructions in @$KAGGLER_PROMPT_FILE. Go."
 LOGDIR="/workspace/kagent/logs"
 mkdir -p "$LOGDIR"
 

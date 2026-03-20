@@ -3,7 +3,7 @@
 import subprocess
 import sys
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import simple_parsing as sp
 
@@ -24,6 +24,7 @@ KAGGLER_NAMES = [
 class Args:
     """Launch kagent kaggler pods on Kubernetes."""
     tag: str  # research tag (e.g. mar18)
+    competition: str = "cfd-competition"  # repo-relative competition directory
     names: str = ""  # comma-separated kaggler names (e.g. "frieren,fern")
     n_kagglers: int = 4  # number of kagglers (ignored if --names provided)
     repo_url: str = "https://github.com/tcapelle/kagent.git"
@@ -65,15 +66,47 @@ def kubectl_apply(manifest: str, name: str):
         print(f"  {result.stdout.strip()}")
 
 
+def normalize_competition_dir(competition: str) -> str:
+    """Normalize and validate the repo-relative competition directory."""
+    competition_dir = PurePosixPath(competition.strip())
+    if not competition_dir.parts:
+        raise ValueError("competition must not be empty")
+    if competition_dir.is_absolute():
+        raise ValueError("competition must be repo-relative, not absolute")
+    if ".." in competition_dir.parts:
+        raise ValueError("competition must not contain '..'")
+    return str(competition_dir)
+
+
+def build_competition_env(competition_dir: str) -> dict[str, str]:
+    """Build shared environment variables for competition-specific runtimes."""
+    repo_root = PurePosixPath("/workspace/kagent")
+    comp_path = PurePosixPath(competition_dir)
+    comp_root = repo_root / comp_path
+    return {
+        "COMPETITION_DIR": str(comp_path),
+        "COMPETITION_NAME": comp_path.name,
+        "KAGGLER_WORKDIR": str(comp_root / "kaggler"),
+        "ORGANIZER_WORKDIR": str(comp_root / "organizer"),
+        "KAGGLER_PROMPT_FILE": "KAGGLER_AGENT.md",
+    }
+
+
 def main():
     args = sp.parse(Args)
+    competition_dir = normalize_competition_dir(args.competition)
+    competition_env = build_competition_env(competition_dir)
 
     # --- Prepare splits job ---
     if args.prepare:
         configmap = render_configmap(
             name="kagent-config-prepare",
             labels={"app": "kagent", "role": "prepare", "research-tag": args.tag},
-            data={"REPO_URL": args.repo_url, "REPO_BRANCH": args.repo_branch},
+            data={
+                "REPO_URL": args.repo_url,
+                "REPO_BRANCH": args.repo_branch,
+                **competition_env,
+            },
         )
         job = render_template(PREPARE_TEMPLATE.read_text(), {
             "RESEARCH_TAG": args.tag, "IMAGE": args.image,
@@ -106,6 +139,7 @@ def main():
                 "WANDB_ENTITY": args.wandb_entity,
                 "WANDB_PROJECT": args.wandb_project,
                 "WANDB_MODE": "online",
+                **competition_env,
             },
         )
         deployment = render_template(template, {
@@ -132,6 +166,7 @@ def main():
                 "RESEARCH_TAG": args.tag,
                 "WANDB_ENTITY": args.wandb_entity,
                 "WANDB_PROJECT": args.wandb_project,
+                **competition_env,
             },
         )
         deployment = render_template(ORGANIZER_TEMPLATE.read_text(), {
@@ -148,6 +183,7 @@ def main():
 
     if not args.dry_run:
         print(f"\nLaunched {len(kaggler_list)} kagglers: {', '.join(kaggler_list)}")
+        print(f"Competition: {competition_dir}")
         print(f"Each on branch: kaggler/<name>")
         print(f"Predictions: /mnt/new-pvc/predictions/<name>/<commit>/")
         if args.organizer:

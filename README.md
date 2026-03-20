@@ -52,10 +52,10 @@ See [`cfd-competition/`](cfd-competition/) for full details:
 
 ```bash
 # 1. Prepare data (one-time, needs PVC access)
-uv run k8s/launch.py --tag mar18 --prepare
+uv run k8s/launch.py --tag mar18 --competition cfd-competition --prepare
 
 # 2. Launch 20 kagglers + organizer
-uv run k8s/launch.py --tag mar18 --n_kagglers 20 --organizer
+uv run k8s/launch.py --tag mar18 --competition cfd-competition --n_kagglers 20 --organizer
 
 # 3. Monitor
 kubectl get deployments -l research-tag=mar18
@@ -72,7 +72,7 @@ kubectl delete deployments,configmaps -l research-tag=mar18
 kagent/
 ├── cfd-competition/
 │   ├── kaggler/          What agents get
-│   │   ├── CLAUDE-KAGGLER.md   Agent instructions (experiment loop)
+│   │   ├── KAGGLER_AGENT.md    Agent instructions (experiment loop)
 │   │   ├── README.md           Competition description + rules
 │   │   ├── data.py             Data loader (read-only)
 │   │   ├── train.py            Training template
@@ -107,4 +107,29 @@ kagent/
 - `README.md` — problem description, rules, metrics
 - `score.py` — evaluation logic
 
-To run a different competition, create a new `<name>-competition/` folder with the same structure.
+To run a different competition, create a repo-relative folder such as `<name>-competition/` with this structure:
+
+```text
+<name>-competition/
+├── kaggler/
+│   ├── KAGGLER_AGENT.md
+│   ├── README.md
+│   ├── train.py
+│   └── predict.py
+└── organizer/
+    ├── README.md
+    ├── prepare_splits.py
+    └── score.py
+```
+
+The infrastructure assumes these filenames exist:
+- `kaggler/KAGGLER_AGENT.md` — agent loop instructions
+- `organizer/prepare_splits.py` — one-time dataset preparation entrypoint
+- `organizer/score.py` — organizer scoring loop entrypoint
+
+Then launch it with:
+
+```bash
+uv run k8s/launch.py --tag <tag> --competition <name>-competition --prepare
+uv run k8s/launch.py --tag <tag> --competition <name>-competition --organizer
+```
