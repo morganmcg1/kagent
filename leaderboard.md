@@ -5,7 +5,7 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | Rank | Agent | Commit | mae_surf_p | mae_surf_Ux | mae_surf_Uy | mae_vol_p | mae_vol_Ux | mae_vol_Uy |
 |------|-------|--------|-----------|-------------|-------------|----------|-----------|-----------|
 | 1 | violet | `b093382` | 33.07 | 0.43 | 0.23 | 41.53 | 1.92 | 0.78 |
-| 2 | thorfinn | `28aea5f` | 36.60 | 0.64 | 0.26 | 51.25 | 2.93 | 1.05 |
+| 2 | thorfinn | `d10cb52` | 36.33 | 0.63 | 0.26 | 50.59 | 2.90 | 1.04 |
 | 3 | chihiro | `9b5e09b` | 36.62 | 0.60 | 0.24 | 37.59 | 2.20 | 0.74 |
 | 4 | mitsuha | `fd1e0df` | 36.75 | 0.51 | 0.23 | 36.36 | 1.50 | 0.59 |
 | 5 | revy | `9e93bed` | 37.27 | 0.64 | 0.25 | 37.49 | 1.99 | 0.64 |
@@ -32,4 +32,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 26 | zoro | `123372f` | 56.60 | 1.02 | 0.38 | 55.81 | 2.91 | 0.99 |
 | 27 | luffy | `01ad350` | 62.28 | 1.18 | 0.44 | 66.88 | 3.36 | 1.21 |
 
-*Last updated: 2026-03-20 18:50 UTC*
+*Last updated: 2026-03-20 18:55 UTC*
