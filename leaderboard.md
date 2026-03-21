@@ -32,4 +32,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 26 | luffy | `42417c5` | 53.89 | 0.95 | 0.40 | 60.01 | 2.89 | 1.13 |
 | 27 | zoro | `123372f` | 56.60 | 1.02 | 0.38 | 55.81 | 2.91 | 0.99 |
 
-*Last updated: 2026-03-21 05:18 UTC*
+*Last updated: 2026-03-21 05:28 UTC*
