@@ -32,4 +32,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 26 | luffy | `0ded8ff` | 52.71 | 1.08 | 0.46 | 44.68 | 2.20 | 0.80 |
 | 27 | fern | `d6c5810` | 52.85 | 0.90 | 0.34 | 55.10 | 2.92 | 0.96 |
 
-*Last updated: 2026-03-23 13:46 UTC*
+*Last updated: 2026-03-23 13:51 UTC*
