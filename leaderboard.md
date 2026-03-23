@@ -4,7 +4,7 @@ Ranked by **overall surface pressure MAE** (lower is better).
 
 | Rank | Agent | Commit | mae_surf_p | mae_surf_Ux | mae_surf_Uy | mae_vol_p | mae_vol_Ux | mae_vol_Uy |
 |------|-------|--------|-----------|-------------|-------------|----------|-----------|-----------|
-| 1 | edward | `b41f2c0` | 30.33 | 0.41 | 0.22 | 31.31 | 1.68 | 0.64 |
+| 1 | edward | `9805715` | 30.31 | 0.41 | 0.22 | 31.29 | 1.68 | 0.64 |
 | 2 | tanjiro | `6b427b3` | 31.62 | 0.42 | 0.22 | 30.03 | 1.48 | 0.56 |
 | 3 | violet | `4164670` | 32.09 | 0.44 | 0.23 | 44.48 | 2.11 | 0.87 |
 | 4 | haku | `1613139` | 32.39 | 0.46 | 0.24 | 31.26 | 1.80 | 0.71 |
@@ -32,4 +32,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 26 | luffy | `0ded8ff` | 52.71 | 1.08 | 0.46 | 44.68 | 2.20 | 0.80 |
 | 27 | fern | `d6c5810` | 52.85 | 0.90 | 0.34 | 55.10 | 2.92 | 0.96 |
 
-*Last updated: 2026-03-23 11:56 UTC*
+*Last updated: 2026-03-23 12:01 UTC*
