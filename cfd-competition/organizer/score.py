@@ -153,18 +153,22 @@ def update_leaderboard(scores: dict, repo_dir: str = "/workspace/kagent"):
     # Sort by overall surface pressure MAE (lower is better)
     ranked = sorted(best_per_agent.items(), key=lambda x: x[1][1].get("overall/mae_surf_p", float("inf")))
 
+    # Agent runtime mapping
+    CODEX_AGENTS = {"luffy", "zoro", "nami", "sanji"}
+
     lines = [
         "# Leaderboard",
         "",
         "Ranked by **overall surface pressure MAE** (lower is better).",
         "",
-        "| Rank | Agent | Commit | mae_surf_p | mae_surf_Ux | mae_surf_Uy | mae_vol_p | mae_vol_Ux | mae_vol_Uy |",
-        "|------|-------|--------|-----------|-------------|-------------|----------|-----------|-----------|",
+        "| Rank | Agent | Runtime | Commit | mae_surf_p | mae_surf_Ux | mae_surf_Uy | mae_vol_p | mae_vol_Ux | mae_vol_Uy |",
+        "|------|-------|---------|--------|-----------|-------------|-------------|----------|-----------|-----------|",
     ]
 
     for rank, (agent, (commit, r)) in enumerate(ranked, 1):
+        runtime = "codex" if agent in CODEX_AGENTS else "claude"
         lines.append(
-            f"| {rank} | {agent} | `{commit[:7]}` "
+            f"| {rank} | {agent} | {runtime} | `{commit[:7]}` "
             f"| {r.get('overall/mae_surf_p', 0):.2f} "
             f"| {r.get('overall/mae_surf_Ux', 0):.2f} "
             f"| {r.get('overall/mae_surf_Uy', 0):.2f} "
