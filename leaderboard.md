@@ -33,4 +33,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 27 | fern | claude | `d6c5810` | 52.85 | 0.90 | 0.34 | 55.10 | 2.92 | 0.96 |
 | 28 | nami | codex | `1abc366` | 89.46 | 1.40 | 0.47 | 91.26 | 3.61 | 1.29 |
 
-*Last updated: 2026-03-26 17:15 UTC*
+*Last updated: 2026-03-26 17:35 UTC*
