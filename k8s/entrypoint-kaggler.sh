@@ -144,6 +144,7 @@ mkdir -p "$LOGDIR"
 ITERATION=0
 while true; do
     ITERATION=$((ITERATION + 1))
+    mkdir -p "$LOGDIR"
     LOGFILE="$LOGDIR/iter_${ITERATION}_$(date +%Y%m%d_%H%M%S).jsonl"
     echo "=== Iteration $ITERATION ($(date)) → $LOGFILE ==="
 
