@@ -2,6 +2,8 @@ set -e
 set -o pipefail
 
 : "${COMPETITION_DIR:?missing COMPETITION_DIR}"
+: "${KAGGLER_NAME:?missing KAGGLER_NAME}"
+: "${ANTHROPIC_API_KEY:?missing ANTHROPIC_API_KEY}"
 
 BRANCH="kaggler/$KAGGLER_NAME"
 AGENT_MODEL="${AGENT_MODEL:-}"
@@ -30,45 +32,9 @@ uv pip install --system -e .
 git config user.name "kagent-$KAGGLER_NAME"
 git config user.email "kagent-$KAGGLER_NAME@kagent"
 
-require_gh() {
-    if ! command -v gh >/dev/null 2>&1; then
-        echo "GitHub CLI is not present in the image"
-        exit 1
-    fi
-}
-
-update_claude() {
-    export PATH="$HOME/.claude/bin:$HOME/.local/bin:$PATH"
-    if ! command -v claude >/dev/null 2>&1; then
-        echo "Claude CLI is not present in the image"
-        exit 1
-    fi
-
-    claude update >/dev/null 2>&1 || echo "Claude update failed, using baked version"
-}
-
-require_auth() {
-    if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-        echo "Missing ANTHROPIC_API_KEY"
-        exit 1
-    fi
-}
-
-run_claude_iteration() {
-    local logfile="$1"
-    local args=(--model "$AGENT_MODEL" --output-format stream-json --verbose --dangerously-skip-permissions)
-
-    if [ "$ITERATION" -eq 1 ]; then
-        claude -p "$PROMPT" "${args[@]}" > "$logfile" 2>&1 || true
-    else
-        claude -c -p "$PROMPT" "${args[@]}" > "$logfile" 2>&1 || \
-        claude -p "$PROMPT" "${args[@]}" > "$logfile" 2>&1 || true
-    fi
-}
-
-update_claude
-require_gh
-require_auth
+# Update claude to latest (image has it baked in)
+export PATH="$HOME/.claude/bin:$HOME/.local/bin:$PATH"
+claude update >/dev/null 2>&1 || echo "Claude update failed, using baked version"
 
 # --- Launch ---
 cd "$KAGGLER_WORKDIR"
@@ -81,7 +47,6 @@ fi
 
 PROMPT="You are $KAGGLER_NAME. Your branch is $BRANCH. Read $KAGGLER_PROMPT_FILE in the current directory and follow it. Go."
 LOGDIR="/workspace/kagent/logs"
-mkdir -p "$LOGDIR"
 
 ITERATION=0
 while true; do
@@ -90,7 +55,12 @@ while true; do
     LOGFILE="$LOGDIR/iter_${ITERATION}_$(date +%Y%m%d_%H%M%S).jsonl"
     echo "=== Iteration $ITERATION ($(date)) → $LOGFILE ==="
 
-    run_claude_iteration "$LOGFILE"
+    if [ "$ITERATION" -eq 1 ]; then
+        claude -p "$PROMPT" --model "$AGENT_MODEL" --output-format stream-json --verbose --dangerously-skip-permissions > "$LOGFILE" 2>&1 || true
+    else
+        claude -c -p "$PROMPT" --model "$AGENT_MODEL" --output-format stream-json --verbose --dangerously-skip-permissions > "$LOGFILE" 2>&1 || \
+        claude -p "$PROMPT" --model "$AGENT_MODEL" --output-format stream-json --verbose --dangerously-skip-permissions > "$LOGFILE" 2>&1 || true
+    fi
 
     echo "=== Restarting in 10s ==="
     sleep 10
