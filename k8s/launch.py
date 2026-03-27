@@ -1,6 +1,5 @@
 """Launch kagent kaggler pods on Kubernetes."""
 
-import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -74,17 +73,6 @@ def kubectl_apply(manifest: str, name: str):
         print(f"  {result.stdout.strip()}")
 
 
-def validate_k8s_label(name: str) -> str:
-    """Validate that name is a valid K8s label value. Raises ValueError if not."""
-    if not re.fullmatch(r'[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?', name):
-        raise ValueError(
-            f"Competition name {name!r} is not a valid K8s label. "
-            "Must be lowercase alphanumeric with hyphens, 1-40 chars, "
-            "no leading/trailing hyphens."
-        )
-    return name
-
-
 def normalize_competition_dir(competition: str) -> str:
     """Normalize and validate the repo-relative competition directory."""
     competition_dir = PurePosixPath(competition.strip())
@@ -94,7 +82,6 @@ def normalize_competition_dir(competition: str) -> str:
         raise ValueError("competition must be repo-relative, not absolute")
     if ".." in competition_dir.parts:
         raise ValueError("competition must not contain '..'")
-    validate_k8s_label(competition_dir.name)
     return str(competition_dir)
 
 
