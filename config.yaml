@@ -16,7 +16,7 @@ repo_url: https://github.com/tcapelle/kagent.git
 repo_branch: main
 
 # docker image
-image: ghcr.io/wandb/kagent:latest
+image: ghcr.io/tcapelle/kagent:latest
 
 # W&B
 wandb_entity: wandb-applied-ai-team
