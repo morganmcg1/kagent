@@ -9,6 +9,7 @@ BRANCH="kaggler/$KAGGLER_NAME"
 AGENT_MODEL="${AGENT_MODEL:-}"
 KAGGLER_WORKDIR="${KAGGLER_WORKDIR:-/workspace/kagent/$COMPETITION_DIR/kaggler}"
 KAGGLER_PROMPT_FILE="${KAGGLER_PROMPT_FILE:-KAGGLER_AGENT.md}"
+export PATH="$HOME/.claude/bin:$HOME/.local/bin:$PATH"
 
 echo "=== kagent Kaggler: $KAGGLER_NAME ==="
 echo "Competition: $COMPETITION_DIR"
@@ -33,8 +34,15 @@ git config user.name "kagent-$KAGGLER_NAME"
 git config user.email "kagent-$KAGGLER_NAME@kagent"
 
 # Update claude to latest (image has it baked in)
-export PATH="$HOME/.claude/bin:$HOME/.local/bin:$PATH"
 claude update >/dev/null 2>&1 || echo "Claude update failed, using baked version"
+
+# --- Register Weave Claude Code Plugin (tools baked into image) ---
+source /workspace/kagent/k8s/install-weave-cc-plugin.sh
+
+# --- Start Hivemind (streams CC session logs to hivemind.wandb.tools) ---
+mkdir -p ~/.claude/projects
+uvx --from wandb-hivemind hivemind run &
+echo "=== Hivemind started (PID=$!) ==="
 
 # --- Launch ---
 cd "$KAGGLER_WORKDIR"
