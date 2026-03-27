@@ -3,7 +3,7 @@
 Organizer-only. Scores submissions and logs results to W&B.
 
 Run:
-  python score.py --predictions /mnt/new-pvc/predictions/frieren/abc1234/predictions.pt
+  python score.py --predictions /mnt/new-pvc/predictions/<comp>/frieren/abc1234/predictions.pt
   python score.py --score_all
 """
 
@@ -17,7 +17,8 @@ import torch
 import wandb
 
 SPLITS_DIR = Path("/mnt/new-pvc/datasets/tandemfoil/splits")
-PREDICTIONS_ROOT = Path("/mnt/new-pvc/predictions")
+COMPETITION_NAME = os.environ.get("COMPETITION_NAME", "")
+PREDICTIONS_ROOT = Path("/mnt/new-pvc/predictions") / COMPETITION_NAME if COMPETITION_NAME else Path("/mnt/new-pvc/predictions")
 SCORES_FILE = PREDICTIONS_ROOT / "scores.json"
 CHANNELS = ["Ux", "Uy", "p"]
 
@@ -117,7 +118,7 @@ def save_scores(scores: dict):
 
 
 def update_leaderboard(scores: dict, repo_dir: str = "/workspace/kagent"):
-    """Update leaderboard.md in the repo and push to main."""
+    """Update leaderboard.md in the repo and push to the organizer branch."""
     if not scores:
         return
 
@@ -158,19 +159,21 @@ def update_leaderboard(scores: dict, repo_dir: str = "/workspace/kagent"):
     leaderboard_path = Path(repo_dir) / "leaderboard.md"
     leaderboard_path.write_text("\n".join(lines))
 
+    branch = os.environ.get("ORGANIZER_BRANCH", "main")
+    comp = COMPETITION_NAME
     import subprocess
     git = lambda *args: subprocess.run(["git", "-C", repo_dir] + list(args), capture_output=True, text=True)
-    git("config", "user.name", "kagent-organizer")
-    git("config", "user.email", "kagent-organizer@kagent")
-    git("checkout", "main")
-    git("pull", "origin", "main")
+    git("config", "user.name", f"kagent-{comp}-organizer" if comp else "kagent-organizer")
+    git("config", "user.email", f"kagent-{comp}-organizer@kagent" if comp else "kagent-organizer@kagent")
+    git("checkout", branch)
+    git("pull", "origin", branch)
     git("add", "leaderboard.md")
     result = git("diff", "--cached", "--quiet")
     if result.returncode != 0:
         git("commit", "-m", "Update leaderboard")
-        push = git("push", "origin", "main")
+        push = git("push", "origin", branch)
         if push.returncode == 0:
-            print(f"  Leaderboard pushed to main ({len(ranked)} agents)")
+            print(f"  Leaderboard pushed to {branch} ({len(ranked)} agents)")
         else:
             print(f"  Leaderboard push failed: {push.stderr.strip()}")
     else:
@@ -184,11 +187,13 @@ if cfg.score_all:
     scores = load_scores()
 
     # Find pending submissions
+    # PREDICTIONS_ROOT is already competition-scoped: /mnt/new-pvc/predictions/<comp>/
+    # Files are at: PREDICTIONS_ROOT/<agent>/<commit>/predictions.pt
     pending = []
     for pred_file in sorted(PREDICTIONS_ROOT.glob("*/*/predictions.pt")):
-        parts = pred_file.parts
-        pred_idx = parts.index("predictions")
-        key = f"{parts[pred_idx + 1]}/{parts[pred_idx + 2]}"
+        agent = pred_file.parent.parent.name
+        commit = pred_file.parent.name
+        key = f"{agent}/{commit}"
         if key not in scores:
             pending.append((key, pred_file))
 
@@ -216,10 +221,9 @@ if cfg.score_all:
 elif cfg.predictions:
     gt = load_ground_truth(gt_dir)
     pred_path = Path(cfg.predictions)
-    parts = pred_path.parts
-    pred_idx = parts.index("predictions")
-    agent = parts[pred_idx + 1]
-    commit = parts[pred_idx + 2]
+    # Extract agent/commit from path: .../predictions[/<comp>]/<agent>/<commit>/predictions.pt
+    agent = pred_path.parent.parent.name
+    commit = pred_path.parent.name
     print(f"Scoring: {agent} @ {commit}")
     results = score_predictions(pred_path, gt)
     log_to_wandb(results, agent, commit)

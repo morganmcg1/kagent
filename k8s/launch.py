@@ -1,5 +1,6 @@
 """Launch kagent kaggler pods on Kubernetes."""
 
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -73,6 +74,17 @@ def kubectl_apply(manifest: str, name: str):
         print(f"  {result.stdout.strip()}")
 
 
+def validate_k8s_label(name: str) -> str:
+    """Validate that name is a valid K8s label value. Raises ValueError if not."""
+    if not re.fullmatch(r'[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?', name):
+        raise ValueError(
+            f"Competition name {name!r} is not a valid K8s label. "
+            "Must be lowercase alphanumeric with hyphens, 1-40 chars, "
+            "no leading/trailing hyphens."
+        )
+    return name
+
+
 def normalize_competition_dir(competition: str) -> str:
     """Normalize and validate the repo-relative competition directory."""
     competition_dir = PurePosixPath(competition.strip())
@@ -82,6 +94,7 @@ def normalize_competition_dir(competition: str) -> str:
         raise ValueError("competition must be repo-relative, not absolute")
     if ".." in competition_dir.parts:
         raise ValueError("competition must not contain '..'")
+    validate_k8s_label(competition_dir.name)
     return str(competition_dir)
 
 
@@ -93,6 +106,7 @@ def build_competition_env(competition_dir: str) -> dict[str, str]:
     return {
         "COMPETITION_DIR": str(comp_path),
         "COMPETITION_NAME": comp_path.name,
+        "COMPETITION_LABEL": comp_path.name,
         "KAGGLER_WORKDIR": str(comp_root / "kaggler"),
         "ORGANIZER_WORKDIR": str(comp_root / "organizer"),
         "KAGGLER_PROMPT_FILE": "KAGGLER_AGENT.md",
@@ -116,6 +130,7 @@ def main():
     config_path = Path(__file__).parent.parent / "config.yaml"
     args = sp.parse(Args, config_path=str(config_path))
     competition_dir = normalize_competition_dir(args.competition)
+    comp_label = PurePosixPath(competition_dir).name
     agent_runtime = normalize_agent_runtime(args.agent_runtime)
     agent_model = resolve_agent_model(agent_runtime, args.agent_model)
     competition_env = build_competition_env(competition_dir)
@@ -123,8 +138,8 @@ def main():
     # --- Prepare splits job ---
     if args.prepare:
         configmap = render_configmap(
-            name="kagent-config-prepare",
-            labels={"app": "kagent", "role": "prepare", "research-tag": args.tag},
+            name=f"kagent-config-{comp_label}-prepare",
+            labels={"app": "kagent", "role": "prepare", "competition": comp_label, "research-tag": args.tag},
             data={
                 "REPO_URL": args.repo_url,
                 "REPO_BRANCH": args.repo_branch,
@@ -132,14 +147,14 @@ def main():
             },
         )
         job = render_template(PREPARE_TEMPLATE.read_text(), {
-            "RESEARCH_TAG": args.tag, "IMAGE": args.image,
+            "COMPETITION_LABEL": comp_label, "RESEARCH_TAG": args.tag, "IMAGE": args.image,
         })
         manifest = configmap + "\n---\n" + job
         if args.dry_run:
             print(manifest)
         else:
-            kubectl_apply(manifest, "prepare-splits")
-            print(f"\n  kubectl logs -f job/kagent-prepare-splits")
+            kubectl_apply(manifest, f"prepare-splits ({comp_label})")
+            print(f"\n  kubectl logs -f job/kagent-{comp_label}-prepare")
         return
 
     # --- Resolve kaggler list ---
@@ -152,8 +167,8 @@ def main():
     template = KAGGLER_TEMPLATE.read_text()
     for name in kaggler_list:
         configmap = render_configmap(
-            name=f"kagent-config-kaggler-{name}",
-            labels={"app": "kagent", "role": "kaggler", "research-tag": args.tag},
+            name=f"kagent-config-{comp_label}-{name}",
+            labels={"app": "kagent", "role": "kaggler", "competition": comp_label, "research-tag": args.tag},
             data={
                 "REPO_URL": args.repo_url,
                 "REPO_BRANCH": args.repo_branch,
@@ -168,6 +183,7 @@ def main():
             },
         )
         deployment = render_template(template, {
+            "COMPETITION_LABEL": comp_label,
             "KAGGLER_NAME": name,
             "RESEARCH_TAG": args.tag,
             "IMAGE": args.image,
@@ -183,8 +199,8 @@ def main():
     # --- Deploy organizer ---
     if args.organizer:
         configmap = render_configmap(
-            name="kagent-config-organizer",
-            labels={"app": "kagent", "role": "organizer", "research-tag": args.tag},
+            name=f"kagent-config-{comp_label}-organizer",
+            labels={"app": "kagent", "role": "organizer", "competition": comp_label, "research-tag": args.tag},
             data={
                 "REPO_URL": args.repo_url,
                 "REPO_BRANCH": args.repo_branch,
@@ -195,6 +211,7 @@ def main():
             },
         )
         deployment = render_template(ORGANIZER_TEMPLATE.read_text(), {
+            "COMPETITION_LABEL": comp_label,
             "RESEARCH_TAG": args.tag,
             "IMAGE": args.image,
         })
@@ -204,23 +221,23 @@ def main():
             print(manifest)
             print()
         else:
-            kubectl_apply(manifest, "organizer")
+            kubectl_apply(manifest, f"organizer ({comp_label})")
 
     if not args.dry_run:
         print(f"\nLaunched {len(kaggler_list)} kagglers: {', '.join(kaggler_list)}")
         print(f"Competition: {competition_dir}")
         print(f"Agent runtime: {agent_runtime} ({agent_model})")
-        print(f"Each on branch: kaggler/<name>")
-        print(f"Predictions: /mnt/new-pvc/predictions/<name>/<commit>/")
+        print(f"Each on branch: {comp_label}/<name>")
+        print(f"Predictions: /mnt/new-pvc/predictions/{comp_label}/<name>/<commit>/")
         if args.organizer:
-            print(f"Organizer: scoring every 5 min")
+            print(f"Organizer: scoring every 5 min (branch: {comp_label}/organizer)")
         print(f"\nMonitor:")
-        print(f"  kubectl get deployments -l research-tag={args.tag}")
-        print(f"  kubectl logs -f deployment/kagent-{kaggler_list[0]}")
+        print(f"  kubectl get deployments -l research-tag={args.tag},competition={comp_label}")
+        print(f"  kubectl logs -f deployment/kagent-{comp_label}-{kaggler_list[0]}")
         if args.organizer:
-            print(f"  kubectl logs -f deployment/kagent-organizer")
+            print(f"  kubectl logs -f deployment/kagent-{comp_label}-organizer")
         print(f"\nStop:")
-        print(f"  kubectl delete deployments,configmaps -l research-tag={args.tag}")
+        print(f"  kubectl delete deployments,configmaps -l research-tag={args.tag},competition={comp_label}")
 
 
 if __name__ == "__main__":

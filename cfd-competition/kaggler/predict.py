@@ -10,6 +10,7 @@ Run:
 """
 
 import json
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,7 +21,8 @@ from tqdm import tqdm
 
 from data import X_DIM
 
-PREDICTIONS_DIR = Path("/mnt/new-pvc/predictions")
+_COMPETITION_NAME = os.environ.get("COMPETITION_NAME", "")
+PREDICTIONS_DIR = Path("/mnt/new-pvc/predictions") / _COMPETITION_NAME if _COMPETITION_NAME else Path("/mnt/new-pvc/predictions")
 SPLITS_DIR = Path("/mnt/new-pvc/datasets/tandemfoil/splits")
 
 

@@ -5,7 +5,7 @@ set -o pipefail
 : "${KAGGLER_NAME:?missing KAGGLER_NAME}"
 : "${ANTHROPIC_API_KEY:?missing ANTHROPIC_API_KEY}"
 
-BRANCH="kaggler/$KAGGLER_NAME"
+BRANCH="${COMPETITION_NAME}/${KAGGLER_NAME}"
 AGENT_MODEL="${AGENT_MODEL:-}"
 KAGGLER_WORKDIR="${KAGGLER_WORKDIR:-/workspace/kagent/$COMPETITION_DIR/kaggler}"
 KAGGLER_PROMPT_FILE="${KAGGLER_PROMPT_FILE:-KAGGLER_AGENT.md}"
@@ -30,8 +30,8 @@ fi
 
 # --- Install ---
 uv pip install --system -e .
-git config user.name "kagent-$KAGGLER_NAME"
-git config user.email "kagent-$KAGGLER_NAME@kagent"
+git config user.name "kagent-${COMPETITION_NAME}-${KAGGLER_NAME}"
+git config user.email "kagent-${COMPETITION_NAME}-${KAGGLER_NAME}@kagent"
 
 # Update claude to latest (image has it baked in)
 claude update >/dev/null 2>&1 || echo "Claude update failed, using baked version"
