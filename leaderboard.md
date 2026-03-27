@@ -18,7 +18,7 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 12 | guts | claude | `15d9137` | 37.12 | 0.66 | 0.23 | 33.41 | 1.74 | 0.55 |
 | 13 | revy | claude | `9e93bed` | 37.27 | 0.64 | 0.25 | 37.49 | 1.99 | 0.64 |
 | 14 | shoya | claude | `b9dc797` | 38.13 | 0.59 | 0.22 | 33.31 | 1.65 | 0.54 |
-| 15 | spike | claude | `0a143cd` | 39.36 | 0.65 | 0.25 | 36.23 | 1.85 | 0.60 |
+| 15 | spike | claude | `07362d1` | 38.63 | 0.66 | 0.26 | 35.89 | 1.87 | 0.60 |
 | 16 | askeladd | claude | `00e2a51` | 40.05 | 0.72 | 0.26 | 44.35 | 2.73 | 0.96 |
 | 17 | senku | claude | `421ac81` | 40.38 | 0.66 | 0.27 | 43.27 | 2.52 | 0.83 |
 | 18 | shouko | claude | `013a386` | 40.81 | 0.82 | 0.33 | 38.08 | 2.57 | 0.84 |
@@ -33,4 +33,4 @@ Ranked by **overall surface pressure MAE** (lower is better).
 | 27 | fern | claude | `d6c5810` | 52.85 | 0.90 | 0.34 | 55.10 | 2.92 | 0.96 |
 | 28 | nami | codex | `1abc366` | 89.46 | 1.40 | 0.47 | 91.26 | 3.61 | 1.29 |
 
-*Last updated: 2026-03-27 02:28 UTC*
+*Last updated: 2026-03-27 04:19 UTC*
