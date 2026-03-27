@@ -113,7 +113,8 @@ def resolve_agent_model(agent_runtime: str, agent_model: str) -> str:
 
 
 def main():
-    args = sp.parse(Args)
+    config_path = Path(__file__).parent.parent / "config.yaml"
+    args = sp.parse(Args, config_path=str(config_path))
     competition_dir = normalize_competition_dir(args.competition)
     agent_runtime = normalize_agent_runtime(args.agent_runtime)
     agent_model = resolve_agent_model(agent_runtime, args.agent_model)

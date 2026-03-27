@@ -1,0 +1,27 @@
+# kagent launch configuration
+# Usage: uv run k8s/launch.py --tag <tag> [--field value]
+# CLI args override these values
+
+tag: mar27  # research tag
+
+# competition
+competition: cfd-competition  # repo-relative competition directory
+
+# agent
+agent_runtime: claude  # one of: claude, codex
+agent_model: ""  # defaults depend on agent_runtime (claude-opus-4-6[1m] for claude)
+
+# git
+repo_url: https://github.com/tcapelle/kagent.git
+repo_branch: main
+
+# docker image
+image: ghcr.io/wandb/kagent:latest
+
+# W&B
+wandb_entity: wandb-applied-ai-team
+wandb_project: kagent-v2
+
+# students
+n_kagglers: 24
+organizer: true

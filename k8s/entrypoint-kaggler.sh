@@ -4,14 +4,12 @@ set -o pipefail
 : "${COMPETITION_DIR:?missing COMPETITION_DIR}"
 
 BRANCH="kaggler/$KAGGLER_NAME"
-AGENT_RUNTIME="${AGENT_RUNTIME:-claude}"
 AGENT_MODEL="${AGENT_MODEL:-}"
 KAGGLER_WORKDIR="${KAGGLER_WORKDIR:-/workspace/kagent/$COMPETITION_DIR/kaggler}"
 KAGGLER_PROMPT_FILE="${KAGGLER_PROMPT_FILE:-KAGGLER_AGENT.md}"
 
 echo "=== kagent Kaggler: $KAGGLER_NAME ==="
 echo "Competition: $COMPETITION_DIR"
-echo "Runtime: $AGENT_RUNTIME"
 echo "Model: ${AGENT_MODEL:-default}"
 echo "GPU: $(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo 'none')"
 
@@ -49,42 +47,11 @@ update_claude() {
     claude update >/dev/null 2>&1 || echo "Claude update failed, using baked version"
 }
 
-update_codex() {
-    if ! command -v codex >/dev/null 2>&1; then
-        echo "Codex CLI is not present in the image"
+require_auth() {
+    if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+        echo "Missing ANTHROPIC_API_KEY"
         exit 1
     fi
-
-    if command -v npm >/dev/null 2>&1 && npm ls -g @openai/codex >/dev/null 2>&1; then
-        npm update -g @openai/codex >/dev/null 2>&1 || echo "Codex update failed, using baked version"
-    else
-        echo "Codex CLI is not npm-managed in this image, skipping update"
-    fi
-}
-
-require_runtime_auth() {
-    case "$AGENT_RUNTIME" in
-        claude)
-            if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
-                echo "Missing ANTHROPIC_API_KEY for claude runtime"
-                exit 1
-            fi
-            ;;
-        codex)
-            if [ -z "${OPENAI_API_KEY:-}" ] && [ ! -f "$HOME/.codex/auth.json" ]; then
-                echo "Missing Codex authentication. Set OPENAI_API_KEY or provision ~/.codex/auth.json"
-                exit 1
-            fi
-            # Login with API key for headless environments
-            if [ -n "${OPENAI_API_KEY:-}" ]; then
-                printenv OPENAI_API_KEY | codex login --with-api-key 2>/dev/null || true
-            fi
-            ;;
-        *)
-            echo "Unsupported AGENT_RUNTIME: $AGENT_RUNTIME"
-            exit 1
-            ;;
-    esac
 }
 
 run_claude_iteration() {
@@ -99,34 +66,9 @@ run_claude_iteration() {
     fi
 }
 
-run_codex_iteration() {
-    local logfile="$1"
-    local exec_args=(exec --json --dangerously-bypass-approvals-and-sandbox --model "$AGENT_MODEL")
-    local resume_args=(exec resume --last --json --dangerously-bypass-approvals-and-sandbox --model "$AGENT_MODEL")
-
-    if [ "$ITERATION" -eq 1 ]; then
-        codex "${exec_args[@]}" "$PROMPT" > "$logfile" 2>&1 || true
-    else
-        codex "${resume_args[@]}" "$PROMPT" > "$logfile" 2>&1 || \
-        codex "${exec_args[@]}" "$PROMPT" > "$logfile" 2>&1 || true
-    fi
-}
-
-case "$AGENT_RUNTIME" in
-    claude)
-        update_claude
-        ;;
-    codex)
-        update_codex
-        ;;
-    *)
-        echo "Unsupported AGENT_RUNTIME: $AGENT_RUNTIME"
-        exit 1
-        ;;
-esac
-
+update_claude
 require_gh
-require_runtime_auth
+require_auth
 
 # --- Launch ---
 cd "$KAGGLER_WORKDIR"
@@ -148,18 +90,7 @@ while true; do
     LOGFILE="$LOGDIR/iter_${ITERATION}_$(date +%Y%m%d_%H%M%S).jsonl"
     echo "=== Iteration $ITERATION ($(date)) → $LOGFILE ==="
 
-    case "$AGENT_RUNTIME" in
-        claude)
-            run_claude_iteration "$LOGFILE"
-            ;;
-        codex)
-            run_codex_iteration "$LOGFILE"
-            ;;
-        *)
-            echo "Unsupported AGENT_RUNTIME: $AGENT_RUNTIME"
-            exit 1
-            ;;
-    esac
+    run_claude_iteration "$LOGFILE"
 
     echo "=== Restarting in 10s ==="
     sleep 10
