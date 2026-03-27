@@ -52,6 +52,7 @@ spec:
             secretKeyRef:
               name: kagent-secrets
               key: exa-api-key
+              optional: true
         - name: GITHUB_TOKEN
           valueFrom:
             secretKeyRef:
